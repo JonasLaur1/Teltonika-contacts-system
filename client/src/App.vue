@@ -4,7 +4,7 @@ import Notification from "./components/Notification.vue";
 </script>
 
 <template>
-  <div class="h-screen overflow-hidden">
+  <div>
     <NavBar />
     <router-view />
     <Notification />
