@@ -5,6 +5,7 @@ import { useRoute, useRouter } from "vue-router";
 import { onMounted, ref } from "vue";
 import { getEmployeePhoto } from "@/utils/photoUtils";
 import { useNotificationStore } from "@/stores/NotificationStore";
+import BackButton from "@/components/BackButton.vue";
 
 const route = useRoute();
 const router = useRouter()
@@ -20,13 +21,9 @@ async function loadEmployee() {
           notificationStore.addErrorNotification("Kontaktas nerastas.")
       return;
     }
-    notificationStore.addErrorNotification("Klaida kraunant kontaktus: " + error)
+    notificationStore.addErrorNotification("Klaida kraunant kontaktą. Bandykite dar kartą")
   }
 }
-
-const goHomePage = () => {
-  router.push('/');
-};
 
 onMounted(() => {
   loadEmployee();
@@ -37,16 +34,7 @@ onMounted(() => {
   <div class="p-8">
     <div class="flex justify-between items-center mb-6">
       <h1 class="text-5xl font-normal mb-6">Detalesnė kontakto informacija:</h1>
-      <button
-        class="shadow shadow-xl rounded-full w-14 h-14 flex items-center justify-center hover:bg-gray-100"
-        @click="goHomePage"
-      >
-        <img
-          src="../assets/images/back.svg"
-          alt="Grįžti atgal"
-          class="w-6 h-6"
-        />
-      </button>
+      <backButton/>
     </div>
 
     <div v-if="employee" class="flex items-center gap-4 mb-8">

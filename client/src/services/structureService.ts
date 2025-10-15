@@ -1,7 +1,6 @@
-import PocketBase from "pocketbase";
 import type Company from "@/types/Companies";
 import axios from "axios";
-const pb = new PocketBase("http://127.0.0.1:8090");
+import {pb} from "./pocketbase"
 
 export default {
   async getCompanies(): Promise<Company[]> {
