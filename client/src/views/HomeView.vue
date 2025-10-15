@@ -76,7 +76,7 @@ async function getEmployees(append = false) {
   } catch (error) {
     isLoading.value = false;
     isLazyLoading.value = false;
-    notificationStore.addErrorNotification("Klaida kraunant kontaktus: " + error)
+    notificationStore.addErrorNotification("Klaida kraunant kontaktus. Bandykite dar kartą.")
   }
 }
 

@@ -1,8 +1,7 @@
-import PocketBase, { type ListResult } from "pocketbase";
+import { type ListResult } from "pocketbase";
 import type Employee from "@/types/Employee";
 import { FILTER_MAPPING } from "@/constants/filters";
-
-const pb = new PocketBase("http://127.0.0.1:8090");
+import {pb} from "./pocketbase"
 
 type Filters = {
   company: string | null;
