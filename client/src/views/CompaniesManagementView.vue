@@ -26,18 +26,19 @@ const companies = ref<Company[]>([]);
 const createNew = ref(false);
 const deleteForm = ref(false);
 
-
 const getCompanies = async () => {
-  try{
+  try {
     const response = await companiesService.getCompanies(
-    currentPage.value,
-    itemsPerPage
-  );
-  companies.value = response.items;
-  totalPages.value = Math.ceil(response.totalItems / itemsPerPage);
-  foundTotal.value = response.totalItems;
-  }catch(error){
-    notificationstore.addErrorNotification("Klaida kraunant įmones. Bandykite dar kartą.")
+      currentPage.value,
+      itemsPerPage
+    );
+    companies.value = response.items;
+    totalPages.value = Math.ceil(response.totalItems / itemsPerPage);
+    foundTotal.value = response.totalItems;
+  } catch (error) {
+    notificationstore.addErrorNotification(
+      "Klaida kraunant įmones. Bandykite dar kartą."
+    );
   }
 };
 
@@ -134,9 +135,17 @@ onMounted(getCompanies);
     <p class="my-5">
       Iš viso rasta <span class="font-bold">{{ foundTotal }} įmonių</span>
     </p>
-    <ContactListEmpty v-if="companies.length === 0" :message="'Įmonių sąrašas tuščias'"/>
+    <ContactListEmpty
+      v-if="companies.length === 0"
+      :message="'Įmonių sąrašas tuščias'"
+    />
     <table v-else class="w-full shadow my-8 rounded-md">
-      <CompaniesListHeader />
+      <CompaniesListHeader
+        :columns="[
+          { key: 'name', label: 'Pavadinimas' },
+          { key: 'actions', label: 'Veiksmas' },
+        ]"
+      />
       <tbody>
         <CompaniesListRow
           v-for="company in companies"
