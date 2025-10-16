@@ -1,19 +1,8 @@
 import type Company from "@/types/Companies";
 import axios from "axios";
-import {pb} from "./pocketbase"
+import { pb } from "./pocketbase";
 
 export default {
-  async getCompanies(): Promise<Company[]> {
-    try {
-      const records = await pb.collection(`companies`).getFullList<Company>({
-        sort: "-created",
-      });
-      return records;
-    } catch (error) {
-      throw error;
-    }
-  },
-
   async getLowerStructures(
     parentName: string,
     structureType: string,
