@@ -7,6 +7,7 @@ import type Group from "@/types/Group";
 import type Office from "@/types/Office";
 import { ref, onMounted } from "vue";
 import FilterSelect from "./FilterSelect.vue";
+import companiesService from "@/services/companiesService";
 
 const companiesFilter = ref<Company[]>([]);
 const officesFilter = ref<Office[]>([]);
@@ -43,7 +44,8 @@ function emitFilters() {
 }
 
 async function getCompanies() {
-  companiesFilter.value = await structureService.getCompanies();
+  const result = await companiesService.getCompanies();
+  companiesFilter.value = result.items;
 }
 
 async function onCompanyChange() {

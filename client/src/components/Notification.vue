@@ -25,7 +25,18 @@ const notifications = notificationStore.notifications;
         ]"
       ></span>
       <div class="pl-2 flex-1 min-w-0 flex items-center">
-        <span class="text-lg font-sm text-red-700 break-words leading-relaxed whitespace-normal">
+        <span
+          :class="[
+            'text-lg font-sm break-words leading-relaxed whitespace-normal',
+            notification.type === 'success'
+              ? 'text-green-700'
+              : notification.type === 'error'
+              ? 'text-red-700'
+              : notification.type === 'alert'
+              ? 'text-yellow-700'
+              : 'text-gray-700'
+          ]"
+        >
           {{ notification.message }}
         </span>
       </div>

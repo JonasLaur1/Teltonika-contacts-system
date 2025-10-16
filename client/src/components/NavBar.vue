@@ -46,7 +46,7 @@ const closeDropdown = () => {
 </script>
 
 <template>
-  <Modal v-if="modalState" :modalState="modalState" @closeModal="closeModal">
+  <Modal v-if="modalState" :modalState="modalState" :deleteForm="false" @closeModal="closeModal">
     <ChangePassword @close="closeModal"/>
   </Modal>
   <div class="m-0 bg-[#1F3F77] h-14 flex items-center px-6">
@@ -61,7 +61,7 @@ const closeDropdown = () => {
         <li>
           <router-link to="/structure-management" class="hover:underline">Struktūra</router-link>
         </li>
-        <li>
+        <li v-if="authStore.isAdmin">
           <router-link to="/admin-management" class="hover:underline">Paskyros</router-link>
         </li>
       </ul>

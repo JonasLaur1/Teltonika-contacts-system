@@ -10,7 +10,7 @@ defineProps<{
 
 <template>
   <div class="bg-white rounded-lg shadow-lg overflow-hidden w-10/11 my-4">
-    <ContactListEmpty v-if="employees.length === 0"/>
+    <ContactListEmpty v-if="employees.length === 0" :message="'Darbuotojų sąrašas tuščias'"/>
     <div v-else class="overflow-x-auto">
       <table class="w-full border-collapse">
         <ContactListHeader />

@@ -4,6 +4,7 @@ import { defineEmits } from "vue";
 
 const props = defineProps<{
     modalState: boolean
+    deleteForm: boolean
 }>()
 const modalState = ref(props.modalState || false);
 
@@ -23,7 +24,7 @@ const closeModal = () => {
 <template>
   <div v-if="modalState" class="modal modal-open">
     <div class="modal-box">
-      <form method="dialog">
+      <form method="dialog" v-if="!deleteForm">
         <button 
           class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" 
           @click.prevent="closeModal"

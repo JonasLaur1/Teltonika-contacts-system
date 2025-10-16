@@ -9,6 +9,7 @@ import StructureManagementView from "@/views/StructureManagementView.vue";
 import ConfirmPasswordResetView from "@/views/ConfirmPasswordResetView.vue";
 import { createRouter, createWebHistory } from "vue-router";
 import userService from "@/services/userService";
+import { useAuthStore } from "@/stores/AuthStore";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -71,17 +72,33 @@ const router = createRouter({
   ],
 });
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const requiresAuth = to.matched.some((record) => record.meta.requiresAuth);
   const isAuthenticated = userService.userAuthenticated();
+  const authStore = useAuthStore();
 
   if (requiresAuth && !isAuthenticated) {
     next("/login");
-  } else if (to.name === "login" && isAuthenticated) {
-    next("/");
-  } else {
-    next();
+    return;
   }
+
+  if (to.name === "login" && isAuthenticated) {
+    next("/");
+    return;
+  }
+
+  if (to.name === "admin-management") {
+    if (!authStore.user) {
+      await authStore.checkAuth();
+    }
+    
+    if (!authStore.isAdmin) {
+      next("/");
+      return;
+    }
+  }
+
+  next();
 });
 
 export default router;
