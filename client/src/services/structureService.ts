@@ -22,4 +22,13 @@ export default {
       return [];
     }
   },
+
+  async getStructures(
+    currentCollection: string,
+    currentPage: number,
+    itemsPerPage: number
+  ) {
+    const resultList = await pb.collection(`${currentCollection}`).getList(currentPage, itemsPerPage);
+    return resultList
+  },
 };
