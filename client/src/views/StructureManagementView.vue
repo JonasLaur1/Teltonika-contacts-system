@@ -6,6 +6,8 @@ import StructureTabs from "@/components/StructureTabs.vue";
 import CompaniesListHeader from "@/components/CompaniesListHeader.vue";
 import structureService from "@/services/structureService";
 import ListRow from "@/components/ListRow.vue";
+import DeleteForm from "@/components/forms/DeleteForm.vue";
+import Modal from "@/components/Modal.vue";
 
 const authStore = useAuthStore();
 const currentTab = ref("Ofisai");
@@ -25,8 +27,8 @@ const columnsMap = {
 
 const tabToCollectionMap: Record<string, string> = {
   Ofisai: "offices",
-  Padaliniai: "departments",
-  Skyriai: "divisions",
+  Padaliniai: "divisions",
+  Skyriai: "departments",
   Grupės: "groups",
 };
 
@@ -68,8 +70,29 @@ const handleEditStructure = (item: any) => {
   console.log("Editing structure item:", item);
 };
 
+const modalState = ref(false);
+const selectedItem = ref<any>(null);
+const deleteForm = ref(false);
+
+const openModal = () => {
+  modalState.value = !modalState.value;
+  if (!modalState.value) {
+    selectedItem.value = null;
+    deleteForm.value = false;
+  }
+};
+
 const handleDeleteStructure = (item: any) => {
-  console.log("Deleting structure item:", item);
+  selectedItem.value = item;
+  deleteForm.value = true;
+  modalState.value = true;
+};
+
+const handleUpdate = () => {
+  selectedItem.value = null;
+  deleteForm.value = false;
+  openModal();  
+  getStructureItems();
 };
 
 onMounted(() => {
@@ -78,6 +101,23 @@ onMounted(() => {
 </script>
 
 <template>
+  <Modal
+    :modalState="modalState"
+    @closeModal="openModal"
+    :deleteForm="deleteForm"
+  >
+    <DeleteForm
+      v-if="deleteForm"
+      :item="selectedItem"
+      :config="{ 
+        entityType: 'structure', 
+        structureType: tabToCollectionMap[currentTab].toLowerCase() as any,
+        checkLowerStructures: currentTab !== 'Grupės'
+      }"
+      @closeModal="openModal"
+      @itemDeleted="handleUpdate"
+    />
+  </Modal>
   <div class="ml-10 mr-10">
     <h1 class="text-3xl font-light my-5">Struktūra</h1>
 

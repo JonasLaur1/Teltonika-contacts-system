@@ -118,9 +118,10 @@ onMounted(getCompanies);
     />
     <DeleteForm
       v-else
-      :company="selectedCompany"
+      :item="selectedCompany"
+      :config="{ entityType: 'company' }"
       @closeModal="openModal"
-      @companyDeleted="handleUpdate"
+      @itemDeleted="handleUpdate"
     />
   </Modal>
   <div class="ml-10 mr-10">

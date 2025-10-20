@@ -28,7 +28,18 @@ export default {
     currentPage: number,
     itemsPerPage: number
   ) {
-    const resultList = await pb.collection(`${currentCollection}`).getList(currentPage, itemsPerPage);
-    return resultList
+    const resultList = await pb
+      .collection(`${currentCollection}`)
+      .getList(currentPage, itemsPerPage);
+    return resultList;
+  },
+
+  async deleteStructure(collectionName: string, itemId: string): Promise<void> {
+    try {
+      await pb.collection(collectionName).delete(itemId);
+    } catch (error) {
+      console.error(`Error deleting ${collectionName} item:`, error);
+      throw error;
+    }
   },
 };
