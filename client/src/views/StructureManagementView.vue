@@ -1,36 +1,38 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useAuthStore } from "@/stores/AuthStore";
 import PlusButton from "@/components/PlusButton.vue";
 import StructureTabs from "@/components/StructureTabs.vue";
 import CompaniesListHeader from "@/components/CompaniesListHeader.vue";
 import structureService from "@/services/structureService";
+import ListRow from "@/components/ListRow.vue";
+
 const authStore = useAuthStore();
 const currentTab = ref("Ofisai");
 const items = ref<Array<Record<string, any>>>([]);
 
 const columnsMap = {
   Ofisai: [
-    { key: "name", label: "Pavadinimas" },
-    { key: "address", label: "Adresas" },
-    { key: "actions", label: "Veiksmas" },
+    { key: "pavadinimas", label: "Pavadinimas" },
+    { key: "adresas", label: "Adresas" },
+    { key: "actions", label: "Veiksmai" },
   ],
   Kiti: [
-    { key: "name", label: "Pavadinimas" },
-    { key: "actions", label: "Veiksmas" },
+    { key: "pavadinimas", label: "Pavadinimas" },
+    { key: "actions", label: "Veiksmai" },
   ],
 };
 
 const tabToCollectionMap: Record<string, string> = {
-  Ofisai: 'offices',
-  Padaliniai: 'departments',
-  Skyriai: 'divisions',
-  Grupės: 'groups',
+  Ofisai: "offices",
+  Padaliniai: "departments",
+  Skyriai: "divisions",
+  Grupės: "groups",
 };
 
-const currentColumns = computed(() => {
-  return currentTab.value === "Ofisai" ? columnsMap.Ofisai : columnsMap.Kiti;
-});
+const currentColumns = computed(() =>
+  currentTab.value === "Ofisai" ? columnsMap.Ofisai : columnsMap.Kiti
+);
 
 const handleCreateStructure = () => {
   console.log(`Creating new ${currentTab.value}`);
@@ -38,22 +40,41 @@ const handleCreateStructure = () => {
 
 const handleTabChange = (tab: string) => {
   currentTab.value = tab;
-  console.log("Tab changed to:", tab);
+  getStructureItems();
 };
 
 const getStructureItems = async () => {
   const collectionName = tabToCollectionMap[currentTab.value];
   if (!collectionName) return;
+
   try {
     const result = await structureService.getStructures(collectionName, 1, 99999999);
-    items.value = result.items
-    console.log(items.value)
+
+    items.value = result.items.map((s: any) => ({
+      ...s,
+      pavadinimas: s.name,
+      adresas: [s.street, s.street_number, s.city, s.country]
+        .filter(Boolean)
+        .join(", "),
+    }));
+
+    console.log("Loaded structures:", items.value);
   } catch (error) {
     console.error("Failed to fetch structure items:", error);
   }
 };
 
+const handleEditStructure = (item: any) => {
+  console.log("Editing structure item:", item);
+};
 
+const handleDeleteStructure = (item: any) => {
+  console.log("Deleting structure item:", item);
+};
+
+onMounted(() => {
+  getStructureItems()
+})
 </script>
 
 <template>
@@ -69,21 +90,19 @@ const getStructureItems = async () => {
     </div>
 
     <StructureTabs @change="handleTabChange" />
-    <button class="button bg-blue-500 rounded" @click="getStructureItems">log</button>
-    <table class="w-full shadow my-8 rounded-md">
-      <CompaniesListHeader
-        :columns="[
-          { key: 'name', label: 'Pavadinimas' },
-          { key: 'address', label: 'Adresas' },
-          { key: 'actions', label: 'Veiksmas' },
-        ]"
-      />
+
+    <table class="w-full shadow my-8 rounded-md border border-gray-200">
+      <CompaniesListHeader :columns="currentColumns" />
+
       <tbody>
-        <tr>
-          <td class="px-6 py-4">Sample data</td>
-          <td class="px-6 py-4">Sample address</td>
-          <td class="px-6 py-4">Actions</td>
-        </tr>
+        <ListRow
+          v-for="item in items"
+          :key="item.id"
+          :item="item"
+          :columns="currentColumns"
+          @editItem="handleEditStructure"
+          @deleteItem="handleDeleteStructure"
+        />
       </tbody>
     </table>
   </div>

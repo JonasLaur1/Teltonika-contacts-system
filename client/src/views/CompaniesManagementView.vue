@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import CompaniesListHeader from "@/components/CompaniesListHeader.vue";
-import CompaniesListRow from "@/components/CompaniesListRow.vue";
+import ListRow from "@/components/ListRow.vue";
 import EditCompany from "@/components/forms/EditCompany.vue";
 import DeleteForm from "@/components/forms/DeleteForm.vue";
 import Modal from "@/components/Modal.vue";
@@ -147,12 +147,16 @@ onMounted(getCompanies);
         ]"
       />
       <tbody>
-        <CompaniesListRow
+        <ListRow
           v-for="company in companies"
           :key="company.id"
-          :company="company"
-          @editCompany="handleEditCompany"
-          @deleteCompany="handleDeleteCompany"
+          :item="company"
+          :columns="[
+            { key: 'name', label: 'Pavadinimas' },
+            { key: 'actions', label: 'Veiksmas' },
+          ]"
+          @editItem="handleEditCompany"
+          @deleteItem="handleDeleteCompany"
         />
       </tbody>
     </table>
