@@ -156,6 +156,7 @@ onMounted(getCompanies);
             { key: 'name', label: 'Pavadinimas' },
             { key: 'actions', label: 'Veiksmas' },
           ]"
+          :itemType="'company'"
           @editItem="handleEditCompany"
           @deleteItem="handleDeleteCompany"
         />

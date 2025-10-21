@@ -8,11 +8,15 @@ import structureService from "@/services/structureService";
 import ListRow from "@/components/ListRow.vue";
 import DeleteForm from "@/components/forms/DeleteForm.vue";
 import Modal from "@/components/Modal.vue";
+import CreateOfficeForm from "@/components/forms/CreateOfficeForm.vue";
 
 const authStore = useAuthStore();
 const currentTab = ref("Ofisai");
 const items = ref<Array<Record<string, any>>>([]);
-
+const modalState = ref(false);
+const selectedItem = ref<any>(null);
+const deleteForm = ref(false);
+const createForm = ref(false)
 const columnsMap = {
   Ofisai: [
     { key: "pavadinimas", label: "Pavadinimas" },
@@ -35,10 +39,6 @@ const tabToCollectionMap: Record<string, string> = {
 const currentColumns = computed(() =>
   currentTab.value === "Ofisai" ? columnsMap.Ofisai : columnsMap.Kiti
 );
-
-const handleCreateStructure = () => {
-  console.log(`Creating new ${currentTab.value}`);
-};
 
 const handleTabChange = (tab: string) => {
   currentTab.value = tab;
@@ -70,9 +70,7 @@ const handleEditStructure = (item: any) => {
   console.log("Editing structure item:", item);
 };
 
-const modalState = ref(false);
-const selectedItem = ref<any>(null);
-const deleteForm = ref(false);
+
 
 const openModal = () => {
   modalState.value = !modalState.value;
@@ -88,9 +86,17 @@ const handleDeleteStructure = (item: any) => {
   modalState.value = true;
 };
 
+const handleCreateStructure = (item: any) => {
+  selectedItem.value = item;
+  deleteForm.value = false;
+  createForm.value = true;
+  modalState.value = true;
+};
+
 const handleUpdate = () => {
   selectedItem.value = null;
   deleteForm.value = false;
+  createForm.value = false
   openModal();  
   getStructureItems();
 };
@@ -110,12 +116,18 @@ onMounted(() => {
       v-if="deleteForm"
       :item="selectedItem"
       :config="{ 
-        entityType: 'structure', 
+        entityType: currentTab === 'Ofisai' ? 'office' : 'structure',
         structureType: tabToCollectionMap[currentTab].toLowerCase() as any,
         checkLowerStructures: currentTab !== 'Grupės'
       }"
       @closeModal="openModal"
       @itemDeleted="handleUpdate"
+    />
+    <CreateOfficeForm
+    v-if="createForm"
+    :item="selectedItem"
+    @closeModal="openModal"
+    @itemCreated="handleUpdate"
     />
   </Modal>
   <div class="ml-10 mr-10">
@@ -140,6 +152,7 @@ onMounted(() => {
           :key="item.id"
           :item="item"
           :columns="currentColumns"
+          :itemType="currentTab === 'Ofisai' ? 'office' : 'structure'"
           @editItem="handleEditStructure"
           @deleteItem="handleDeleteStructure"
         />

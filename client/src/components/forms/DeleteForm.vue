@@ -6,7 +6,7 @@ import { ref } from "vue";
 import { useAuthStore } from "@/stores/AuthStore";
 
 interface DeleteConfig {
-  entityType: 'company' | 'structure';
+  entityType: 'company' | 'office' | 'structure';
   structureType?: 'offices' | 'departments' | 'divisions' | 'groups';
   checkLowerStructures?: boolean;
 }
@@ -76,11 +76,14 @@ const checkPermissions = () => {
       notificationStore.addErrorNotification("Neturi reikiamų teisių, kad atlikti šį veiksmą.");
       return false;
     }
-  } else {
-    if (!authStore.userPermissions.canDeleteStructure) {
+  } else if (props.config.entityType === 'office') {
+    if (!authStore.userPermissions.canDeleteOffices) {
       notificationStore.addErrorNotification("Neturi reikiamų teisių, kad atlikti šį veiksmą.");
       return false;
     }
+  } else {
+    notificationStore.addErrorNotification("Neturi reikiamų teisių, kad atlikti šį veiksmą.");
+    return false;
   }
   
   return true;
