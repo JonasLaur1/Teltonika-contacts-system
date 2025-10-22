@@ -10,6 +10,7 @@ import DeleteForm from "@/components/forms/DeleteForm.vue";
 import Modal from "@/components/Modal.vue";
 import CreateOfficeForm from "@/components/forms/CreateOfficeForm.vue";
 import Pagination from "@/components/Pagination.vue";
+import CreateStructureForm from "@/components/forms/CreateStructureForm.vue";
 
 const authStore = useAuthStore();
 const currentTab = ref("Ofisai");
@@ -62,6 +63,15 @@ const getStructureItems = async () => {
       itemsPerPage
     );
 
+    totalPages.value = Math.ceil(result.totalItems / itemsPerPage);
+    foundTotal.value = result.totalItems;
+
+    if (result.items.length === 0 && currentPage.value > 1) {
+      currentPage.value--;
+      await getStructureItems();
+      return;
+    }
+
     items.value = result.items.map((s: any) => ({
       ...s,
       pavadinimas: s.name,
@@ -69,8 +79,6 @@ const getStructureItems = async () => {
         .filter(Boolean)
         .join(", "),
     }));
-    totalPages.value = Math.ceil(result.totalItems / itemsPerPage);
-    foundTotal.value = result.totalItems;
 
     console.log("Loaded structures:", items.value);
   } catch (error) {
@@ -139,8 +147,14 @@ onMounted(() => {
       @itemDeleted="handleUpdate"
     />
     <CreateOfficeForm
-      v-if="createForm"
+      v-if="createForm && currentTab === 'Ofisai'"
       :item="selectedItem"
+      @closeModal="openModal"
+      @officeCreated="handleUpdate"
+    />
+    <CreateStructureForm
+      v-if="createForm && currentTab !== 'Ofisai'"
+      :structureType="tabToCollectionMap[currentTab] as 'divisions' | 'departments' | 'groups'"
       @closeModal="openModal"
       @itemCreated="handleUpdate"
     />

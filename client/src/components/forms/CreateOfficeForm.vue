@@ -162,8 +162,6 @@ const handleSubmit = async () => {
   }
 };
 
-const handleCancel = () => emit("closeModal");
-
 onMounted(() => getCompanies());
 
 const selectedCount = computed(() => selected.value.length);
@@ -214,7 +212,7 @@ const canSubmit = computed(() => {
 
         <div class="flex flex-col w-80">
           <label class="mb-3 font-medium text-gray-700"
-            >Pasirinkite įmones: *</label
+            >Pasirinkite įmones:</label
           >
           <div
             class="overflow-y-auto max-h-80 space-y-2 pr-2 border rounded-md p-3 bg-gray-50"
