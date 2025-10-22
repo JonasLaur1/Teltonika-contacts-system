@@ -1,6 +1,10 @@
 import type Company from "@/types/Companies";
 import axios from "axios";
 import { pb } from "./pocketbase";
+import type Office from "@/types/Office";
+import type Department from "@/types/Department";
+import type Division from "@/types/Division";
+import type Group from "@/types/Group";
 
 export default {
   async getLowerStructures(
@@ -42,4 +46,20 @@ export default {
       throw error;
     }
   },
+
+  async createStructure(type: string, data: Office | Department | Division | Group): Promise<any> {
+    const record = await pb.collection(`${type}`).create(data);
+    return record;
+  },
+
+async linkStructures(type: string, data: Record<string, any>) {
+  try {
+    const record = await pb.collection(type).create(data);
+    console.log("Linked successfully:", record);
+    return record;
+  } catch (error: any) {
+    console.error(`Failed to link in ${type}:`, error?.message || error);
+    throw error;
+  }
+}
 };

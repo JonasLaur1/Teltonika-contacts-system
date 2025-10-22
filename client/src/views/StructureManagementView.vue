@@ -9,6 +9,7 @@ import ListRow from "@/components/ListRow.vue";
 import DeleteForm from "@/components/forms/DeleteForm.vue";
 import Modal from "@/components/Modal.vue";
 import CreateOfficeForm from "@/components/forms/CreateOfficeForm.vue";
+import Pagination from "@/components/Pagination.vue";
 
 const authStore = useAuthStore();
 const currentTab = ref("Ofisai");
@@ -16,7 +17,12 @@ const items = ref<Array<Record<string, any>>>([]);
 const modalState = ref(false);
 const selectedItem = ref<any>(null);
 const deleteForm = ref(false);
-const createForm = ref(false)
+const createForm = ref(false);
+const currentPage = ref(1);
+const itemsPerPage = 5;
+const totalPages = ref<number>(1);
+const foundTotal = ref(0);
+
 const columnsMap = {
   Ofisai: [
     { key: "pavadinimas", label: "Pavadinimas" },
@@ -50,7 +56,11 @@ const getStructureItems = async () => {
   if (!collectionName) return;
 
   try {
-    const result = await structureService.getStructures(collectionName, 1, 99999999);
+    const result = await structureService.getStructures(
+      collectionName,
+      currentPage.value,
+      itemsPerPage
+    );
 
     items.value = result.items.map((s: any) => ({
       ...s,
@@ -59,6 +69,8 @@ const getStructureItems = async () => {
         .filter(Boolean)
         .join(", "),
     }));
+    totalPages.value = Math.ceil(result.totalItems / itemsPerPage);
+    foundTotal.value = result.totalItems;
 
     console.log("Loaded structures:", items.value);
   } catch (error) {
@@ -70,7 +82,10 @@ const handleEditStructure = (item: any) => {
   console.log("Editing structure item:", item);
 };
 
-
+const handlePageChange = (newPage: number) => {
+  currentPage.value = newPage;
+  getStructureItems();
+};
 
 const openModal = () => {
   modalState.value = !modalState.value;
@@ -96,14 +111,14 @@ const handleCreateStructure = (item: any) => {
 const handleUpdate = () => {
   selectedItem.value = null;
   deleteForm.value = false;
-  createForm.value = false
-  openModal();  
+  createForm.value = false;
+  openModal();
   getStructureItems();
 };
 
 onMounted(() => {
-  getStructureItems()
-})
+  getStructureItems();
+});
 </script>
 
 <template>
@@ -124,10 +139,10 @@ onMounted(() => {
       @itemDeleted="handleUpdate"
     />
     <CreateOfficeForm
-    v-if="createForm"
-    :item="selectedItem"
-    @closeModal="openModal"
-    @itemCreated="handleUpdate"
+      v-if="createForm"
+      :item="selectedItem"
+      @closeModal="openModal"
+      @itemCreated="handleUpdate"
     />
   </Modal>
   <div class="ml-10 mr-10">
@@ -158,5 +173,10 @@ onMounted(() => {
         />
       </tbody>
     </table>
+    <Pagination
+      :currentPage="currentPage"
+      :totalPages="totalPages"
+      @update:currentPage="handlePageChange($event)"
+    />
   </div>
 </template>
