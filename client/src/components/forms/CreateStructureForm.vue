@@ -134,6 +134,20 @@ const handleSubmit = async () => {
   try {
     isLoading.value = true;
 
+    const existing = await structureService.getStructures(
+      props.structureType,
+      1,
+      1,
+      trimText(name.value)
+    );
+
+    if (existing.items.length > 0) {
+      notificationStore.addErrorNotification(
+        "Struktūra su tokiu pavadinimu jau egzistuoja"
+      );
+      return;
+    }
+    
     const structureData = { name: trimText(name.value) };
 
     const createdStructure = await structureService.createStructure(

@@ -30,12 +30,25 @@ export default {
   async getStructures(
     currentCollection: string,
     currentPage: number,
-    itemsPerPage: number
+    itemsPerPage: number,
+    nameFilter?: string
   ) {
-    const resultList = await pb
-      .collection(`${currentCollection}`)
-      .getList(currentPage, itemsPerPage);
-    return resultList;
+    try {
+      let filter;
+      if (nameFilter) {
+        filter = `name = "${nameFilter}"`;
+      }
+
+      const resultList = await pb
+        .collection(`${currentCollection}`)
+        .getList(currentPage, itemsPerPage, {
+          sort: "-created",
+          ...(filter && { filter }),
+        });
+      return resultList;
+    } catch (error) {
+      throw error;
+    }
   },
 
   async deleteStructure(collectionName: string, itemId: string): Promise<void> {
@@ -47,19 +60,31 @@ export default {
     }
   },
 
-  async createStructure(type: string, data: Office | Department | Division | Group): Promise<any> {
+  async createStructure(
+    type: string,
+    data: Office | Department | Division | Group
+  ): Promise<any> {
     const record = await pb.collection(`${type}`).create(data);
     return record;
   },
 
-async linkStructures(type: string, data: Record<string, any>) {
-  try {
-    const record = await pb.collection(type).create(data);
-    console.log("Linked successfully:", record);
-    return record;
-  } catch (error: any) {
-    console.error(`Failed to link in ${type}:`, error?.message || error);
-    throw error;
-  }
-}
+  async updateStructure(collectionName:string, id: string, data: Office | Department | Division | Group){
+    try{
+      const record = await pb.collection(collectionName).update(id, data);
+    } catch(error){
+      console.log(error)
+      throw error
+    }
+  },
+
+  async linkStructures(type: string, data: Record<string, any>) {
+    try {
+      const record = await pb.collection(type).create(data);
+      console.log("Linked successfully:", record);
+      return record;
+    } catch (error: any) {
+      console.error(`Failed to link in ${type}:`, error?.message || error);
+      throw error;
+    }
+  },
 };

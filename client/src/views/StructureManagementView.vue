@@ -11,6 +11,7 @@ import Modal from "@/components/Modal.vue";
 import CreateOfficeForm from "@/components/forms/CreateOfficeForm.vue";
 import Pagination from "@/components/Pagination.vue";
 import CreateStructureForm from "@/components/forms/CreateStructureForm.vue";
+import EditOfficeForm from "@/components/forms/EditOfficeForm.vue";
 
 const authStore = useAuthStore();
 const currentTab = ref("Ofisai");
@@ -19,6 +20,7 @@ const modalState = ref(false);
 const selectedItem = ref<any>(null);
 const deleteForm = ref(false);
 const createForm = ref(false);
+const editForm = ref(false);
 const currentPage = ref(1);
 const itemsPerPage = 5;
 const totalPages = ref<number>(1);
@@ -87,7 +89,9 @@ const getStructureItems = async () => {
 };
 
 const handleEditStructure = (item: any) => {
-  console.log("Editing structure item:", item);
+  selectedItem.value = item;
+  editForm.value = true;
+  modalState.value = true;
 };
 
 const handlePageChange = (newPage: number) => {
@@ -157,6 +161,10 @@ onMounted(() => {
       :structureType="tabToCollectionMap[currentTab] as 'divisions' | 'departments' | 'groups'"
       @closeModal="openModal"
       @itemCreated="handleUpdate"
+    />
+    <EditOfficeForm
+      v-if="editForm && currentTab === 'Ofisai'"
+      :office="selectedItem"
     />
   </Modal>
   <div class="ml-10 mr-10">
