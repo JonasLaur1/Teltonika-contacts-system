@@ -51,6 +51,9 @@ const getCompanies = async () => {
 const loadExistingConnections = async () => {
   try {
     const connections = await structureService.getStructureConnections(
+      "companies_offices",
+      "company_id",
+      "office_id",
       props.selectedOffice.id!
     );
     selected.value = [...connections];

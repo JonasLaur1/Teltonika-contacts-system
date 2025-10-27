@@ -92,12 +92,12 @@ export default {
     }
   },
 
-  async getStructureConnections(id: string) {
+  async getStructureConnections(linkType:string, parentType: string, idType: string, id: string) {
     try {
-      const records = await pb.collection("companies_offices").getFullList({
-        filter: `office_id = "${id}"`,
+      const records = await pb.collection(linkType).getFullList({
+        filter: `${idType} = "${id}"`,
       });
-      return records.map((record) => record.company_id);
+      return records.map((record) => record[parentType]);
     } catch (error) {
       throw error;
     }

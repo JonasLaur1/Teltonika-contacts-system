@@ -13,6 +13,7 @@ import Pagination from "@/components/Pagination.vue";
 import CreateStructureForm from "@/components/forms/CreateStructureForm.vue";
 import EditOfficeForm from "@/components/forms/EditOfficeForm.vue";
 import ContactListEmpty from "@/components/ContactListEmpty.vue";
+import EditStructureForm from "@/components/forms/EditStructureForm.vue";
 
 const authStore = useAuthStore();
 const currentTab = ref("Ofisai");
@@ -171,6 +172,13 @@ onMounted(() => {
       :selectedOffice="selectedItem"
       @closeModal="openModal"
       @officeUpdated="handleUpdate"
+    />
+    <EditStructureForm
+      v-if="editForm && currentTab !== 'Ofisai'"
+      :structureType="tabToCollectionMap[currentTab] as 'divisions' | 'departments' | 'groups'"
+      :selectedItem="selectedItem"
+      @closeModal="openModal"
+      @itemUpdated="handleUpdate"
     />
   </Modal>
   <div class="ml-10 mr-10">
