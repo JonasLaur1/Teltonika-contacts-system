@@ -5,79 +5,38 @@ import { useAuthStore } from "@/stores/AuthStore";
 import companiesService from "@/services/companiesService";
 import structureService from "@/services/structureService";
 import type Company from "@/types/Companies";
-import {
-  validateName,
-  validateStreet,
-  validateStreetNumber,
-  validateCity,
-  validateCountry,
-} from "@/utils/Validations";
 import { trimText } from "@/utils/textTrimming";
 import type Office from "@/types/Office";
-
+import { OFFICE_FIELDS } from "@/constants/officeFormFields";
 const notificationStore = useNotificationStore();
 const authStore = useAuthStore();
 
 const props = defineProps<{
-    selectedOffice: Office
-}>()
+  selectedOffice: Office;
+}>();
 
 const emit = defineEmits<{
   closeModal: [];
-  officeCreated: [];
+  officeUpdated: [];
 }>();
 
 const companies = ref<Company[]>([]);
 const selected = ref<string[]>([]);
 const isLoading = ref(false);
+const originalConnections = ref<string[]>([]);
+const originalFormData = ref<Record<string, any>>({});
 
 const formData = reactive({
-  officeName: "",
-  street: "",
-  streetNumber: "",
-  city: "",
-  country: "",
+  officeName: props.selectedOffice.name,
+  street: props.selectedOffice.street,
+  streetNumber: String(props.selectedOffice.street_number),
+  city: props.selectedOffice.city,
+  country: props.selectedOffice.country,
 });
 
 const errors = ref<Record<string, string>>({});
 
-const fields = [
-  {
-    key: "officeName",
-    placeholder: "Įveskite ofiso pavadinimą...",
-    label: "Pavadinimas:",
-    required: true,
-    validate: validateName,
-  },
-  {
-    key: "street",
-    placeholder: "Įveskite gatvės pavadinimą...",
-    label: "Gatvė:",
-    required: true,
-    validate: validateStreet,
-  },
-  {
-    key: "streetNumber",
-    placeholder: "Įveskite pastato numerį...",
-    label: "Pastato numeris:",
-    required: true,
-    validate: validateStreetNumber,
-  },
-  {
-    key: "city",
-    placeholder: "Įveskite miestą...",
-    label: "Miestas:",
-    required: true,
-    validate: validateCity,
-  },
-  {
-    key: "country",
-    placeholder: "Įveskite šalį...",
-    label: "Šalis:",
-    required: true,
-    validate: validateCountry,
-  },
-];
+const fields = OFFICE_FIELDS
 
 const getCompanies = async () => {
   try {
@@ -88,6 +47,37 @@ const getCompanies = async () => {
     notificationStore.addErrorNotification("Nepavyko užkrauti įmonių sąrašo");
   }
 };
+
+const loadExistingConnections = async () => {
+  try {
+    const connections = await structureService.getStructureConnections(
+      props.selectedOffice.id!
+    );
+    selected.value = [...connections];
+    originalConnections.value = [...connections];
+  } catch (error) {
+    console.log("failed to load existing connections", error);
+    notificationStore.addErrorNotification(
+      "Nepavyko užkrauti susijusių įmonių"
+    );
+  }
+};
+
+const isChanged = computed(() => {
+  const formChanged = Object.keys(formData).some(
+    (key) =>
+      trimText(formData[key as keyof typeof formData]) !==
+      trimText(originalFormData.value[key])
+  );
+
+  const current = [...selected.value].sort();
+  const original = [...originalConnections.value].sort();
+  const companiesChanged =
+    current.length !== original.length ||
+    current.some((id, i) => id !== original[i]);
+
+  return formChanged || companiesChanged;
+});
 
 const toggleSelection = (id: string) => {
   if (selected.value.includes(id)) {
@@ -118,58 +108,85 @@ const validateForm = (): boolean => {
   return Object.keys(errors.value).length === 0;
 };
 
+const updateOffice = async () => {
+  const officeData = {
+    name: trimText(formData.officeName),
+    street: trimText(formData.street),
+    street_number: trimText(formData.streetNumber),
+    city: trimText(formData.city),
+    country: trimText(formData.country),
+  };
+
+  await structureService.updateStructure(
+    "offices",
+    props.selectedOffice.id!,
+    officeData
+  );
+};
+
+const updateConnections = async () => {
+  const toAdd = selected.value.filter(
+    (id) => !originalConnections.value.includes(id)
+  );
+  const toRemove = originalConnections.value.filter(
+    (id) => !selected.value.includes(id)
+  );
+
+  for (const companyId of toRemove) {
+    await structureService.removeStructureConnection("companies_offices", {
+      office_id: props.selectedOffice.id!,
+      company_id: companyId,
+    });
+  }
+
+  for (const companyId of toAdd) {
+    await structureService.linkStructures("companies_offices", {
+      company_id: companyId,
+      office_id: props.selectedOffice.id,
+    });
+  }
+
+  originalConnections.value = [...selected.value];
+};
+
+
 const handleSubmit = async () => {
   if (!authStore.checkAuth()) return;
-  if (!authStore.userPermissions.canEditOffices) {
-    notificationStore.addErrorNotification(
-      "Neturi reikiamų teisių šiam veiksmui."
-    );
-    return;
-  }
+  if (!authStore.userPermissions.canEditOffices)
+    return notificationStore.addErrorNotification("Neturi reikiamų teisių.");
+
   if (!validateForm()) return;
   if (isLoading.value) return;
+  if (!isChanged.value)
+    return notificationStore.addAlertNotification("Jokių pakeitimų nerasta.");
 
   try {
     isLoading.value = true;
+    await updateOffice();
+    await updateConnections();
 
-    const officeData = {
-      name: trimText(formData.officeName),
-      street: trimText(formData.street),
-      street_number: trimText(formData.streetNumber),
-      city: trimText(formData.city),
-      country: trimText(formData.country),
-    };
-
-    const createdOffice = await structureService.updateStructure(
-      "offices",
-      props.selectedOffice.id!,
-      officeData
-    );
-
-    for (const companyId of selected.value) {
-      try {
-        await structureService.linkStructures("companies_offices", {
-          company_id: companyId,
-          office_id: createdOffice.id,
-        });
-      } catch (err) {
-        console.error(`Failed to link company ${companyId}:`, err);
-      }
-    }
-
-    notificationStore.addSuccessNotification("Ofisas sukurtas sėkmingai");
-    emit("officeCreated");
-  } catch (error: any) {
-    console.error("Failed to create office:", error);
-    notificationStore.addErrorNotification(
-      error.message || "Klaida kuriant ofisą. Bandykite dar kartą."
-    );
+    originalFormData.value = { ...formData };
+    notificationStore.addSuccessNotification("Ofisas atnaujintas sėkmingai");
+    emit("officeUpdated");
+  } catch (err: any) {
+    notificationStore.addErrorNotification(err.message || "Klaida atnaujinant ofisą.");
   } finally {
     isLoading.value = false;
   }
 };
 
-onMounted(() => getCompanies());
+
+onMounted(async () => {
+  await getCompanies();
+  await loadExistingConnections();
+  originalFormData.value = {
+    officeName: props.selectedOffice.name,
+    street: props.selectedOffice.street,
+    streetNumber: String(props.selectedOffice.street_number),
+    city: props.selectedOffice.city,
+    country: props.selectedOffice.country,
+  };
+});
 
 const selectedCount = computed(() => selected.value.length);
 const canSubmit = computed(() => {
@@ -201,7 +218,9 @@ const canSubmit = computed(() => {
               @input="errors[field.key] = ''"
               @blur="
                 errors[field.key] = field.validate
-                  ? field.validate(formData[field.key as keyof typeof formData])
+                  ? field.validate(
+                      String(formData[field.key as keyof typeof formData])
+                    )
                   : ''
               "
               :class="[

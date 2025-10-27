@@ -12,6 +12,7 @@ import CreateOfficeForm from "@/components/forms/CreateOfficeForm.vue";
 import Pagination from "@/components/Pagination.vue";
 import CreateStructureForm from "@/components/forms/CreateStructureForm.vue";
 import EditOfficeForm from "@/components/forms/EditOfficeForm.vue";
+import ContactListEmpty from "@/components/ContactListEmpty.vue";
 
 const authStore = useAuthStore();
 const currentTab = ref("Ofisai");
@@ -104,6 +105,8 @@ const openModal = () => {
   if (!modalState.value) {
     selectedItem.value = null;
     deleteForm.value = false;
+    editForm.value = false;
+    createForm.value = false;
   }
 };
 
@@ -124,6 +127,7 @@ const handleUpdate = () => {
   selectedItem.value = null;
   deleteForm.value = false;
   createForm.value = false;
+  editForm.value = false;
   openModal();
   getStructureItems();
 };
@@ -164,7 +168,9 @@ onMounted(() => {
     />
     <EditOfficeForm
       v-if="editForm && currentTab === 'Ofisai'"
-      :office="selectedItem"
+      :selectedOffice="selectedItem"
+      @closeModal="openModal"
+      @officeUpdated="handleUpdate"
     />
   </Modal>
   <div class="ml-10 mr-10">
@@ -179,8 +185,11 @@ onMounted(() => {
     </div>
 
     <StructureTabs @change="handleTabChange" />
-
-    <table class="w-full shadow my-8 rounded-md border border-gray-200">
+    <ContactListEmpty
+      v-if="items.length === 0"
+      :message="`Struktūros sąrašas tusčias`"
+    />
+    <table v-else class="w-full shadow my-8 rounded-md border border-gray-200">
       <CompaniesListHeader :columns="currentColumns" />
 
       <tbody>

@@ -68,12 +68,16 @@ export default {
     return record;
   },
 
-  async updateStructure(collectionName:string, id: string, data: Office | Department | Division | Group){
-    try{
+  async updateStructure(
+    collectionName: string,
+    id: string,
+    data: Office | Department | Division | Group
+  ) {
+    try {
       const record = await pb.collection(collectionName).update(id, data);
-    } catch(error){
-      console.log(error)
-      throw error
+    } catch (error) {
+      console.log(error);
+      throw error;
     }
   },
 
@@ -87,4 +91,27 @@ export default {
       throw error;
     }
   },
+
+  async getStructureConnections(id: string) {
+    try {
+      const records = await pb.collection("companies_offices").getFullList({
+        filter: `office_id = "${id}"`,
+      });
+      return records.map((record) => record.company_id);
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  async removeStructureConnection(type: string, data: Record<string, any>){
+    try{
+      const filterString = Object.entries(data).map(([key, value]) => `${key} = "${value}"`).join(' && ')
+      
+      const existing = await pb.collection(type).getFirstListItem(filterString);
+      
+      await pb.collection(type).delete(existing.id);
+    }catch(error){
+      throw error
+    }
+  }
 };

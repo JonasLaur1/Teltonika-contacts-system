@@ -5,14 +5,8 @@ import { useAuthStore } from "@/stores/AuthStore";
 import companiesService from "@/services/companiesService";
 import structureService from "@/services/structureService";
 import type Company from "@/types/Companies";
-import {
-  validateName,
-  validateStreet,
-  validateStreetNumber,
-  validateCity,
-  validateCountry,
-} from "@/utils/Validations";
 import { trimText } from "@/utils/textTrimming";
+import { OFFICE_FIELDS } from "@/constants/officeFormFields";
 
 const notificationStore = useNotificationStore();
 const authStore = useAuthStore();
@@ -35,43 +29,7 @@ const formData = reactive({
 
 const errors = ref<Record<string, string>>({});
 
-const fields = [
-  {
-    key: "officeName",
-    placeholder: "Įveskite ofiso pavadinimą...",
-    label: "Pavadinimas:",
-    required: true,
-    validate: validateName,
-  },
-  {
-    key: "street",
-    placeholder: "Įveskite gatvės pavadinimą...",
-    label: "Gatvė:",
-    required: true,
-    validate: validateStreet,
-  },
-  {
-    key: "streetNumber",
-    placeholder: "Įveskite pastato numerį...",
-    label: "Pastato numeris:",
-    required: true,
-    validate: validateStreetNumber,
-  },
-  {
-    key: "city",
-    placeholder: "Įveskite miestą...",
-    label: "Miestas:",
-    required: true,
-    validate: validateCity,
-  },
-  {
-    key: "country",
-    placeholder: "Įveskite šalį...",
-    label: "Šalis:",
-    required: true,
-    validate: validateCountry,
-  },
-];
+const fields = OFFICE_FIELDS
 
 const getCompanies = async () => {
   try {
