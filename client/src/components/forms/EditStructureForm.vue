@@ -8,7 +8,7 @@ import { trimText } from "@/utils/textTrimming";
 import type Division from "@/types/Division";
 import type Department from "@/types/Department";
 import type Group from "@/types/Group";
-
+import { STRUCTURE_FIELDS } from "@/constants/structureFields";
 const props = defineProps<{
   structureType: "divisions" | "departments" | "groups";
   selectedItem: Division | Department | Group;
@@ -20,61 +20,20 @@ const selected = ref<string[]>([]);
 const originalConnections = ref<string[]>([]);
 const errors = ref<Record<string, string>>({});
 const name = ref(props.selectedItem.name);
+const originalName = props.selectedItem.name;
 
 const authStore = useAuthStore();
 const notificationStore = useNotificationStore();
 
 const emit = defineEmits(["closeModal", "itemUpdated"]);
 
-const config = computed(() => {
-  switch (props.structureType) {
-    case "divisions":
-      return {
-        title: "Pridėkite naują padalinį",
-        nameLabel: "Padalinio pavadinimas:",
-        namePlaceholder: "Įveskite padalinio pavadinimą...",
-        parentLabel: "Pasirinkite ofisus:",
-        parentType: "offices",
-        linkTable: "offices_divisions",
-        linkFields: { parent: "office_id", child: "division_id" },
-        successMessage: "Padalinys sukurtas sėkmingai",
-        errorMessage: "Klaida kuriant padalinį. Bandykite dar kartą.",
-        parentErrorMessage: "Pasirinkite bent vieną ofisą",
-        parentCountText: (count: number) => `Pasirinkta: ${count} ofisas(-ai)`,
-      };
-    case "departments":
-      return {
-        title: "Pridėkite naują skyrių",
-        nameLabel: "Skyriaus pavadinimas:",
-        namePlaceholder: "Įveskite skyriaus pavadinimą...",
-        parentLabel: "Pasirinkite padalinius:",
-        parentType: "divisions",
-        linkTable: "divisions_departments",
-        linkFields: { parent: "division_id", child: "department_id" },
-        successMessage: "Skyrius sukurtas sėkmingai",
-        errorMessage: "Klaida kuriant skyrių. Bandykite dar kartą.",
-        parentErrorMessage: "Pasirinkite bent vieną padalinį",
-        parentCountText: (count: number) =>
-          `Pasirinkta: ${count} padalinys(-iai)`,
-      };
-    case "groups":
-      return {
-        title: "Pridėkite naują grupę",
-        nameLabel: "Grupės pavadinimas:",
-        namePlaceholder: "Įveskite grupės pavadinimą...",
-        parentLabel: "Pasirinkite skyrius:",
-        parentType: "departments",
-        linkTable: "departments_groups",
-        linkFields: { parent: "department_id", child: "group_id" },
-        successMessage: "Grupė sukurta sėkmingai",
-        errorMessage: "Klaida kuriant grupę. Bandykite dar kartą.",
-        parentErrorMessage: "Pasirinkite bent vieną skyrių",
-        parentCountText: (count: number) =>
-          `Pasirinkta: ${count} skyrius(-iai)`,
-      };
-    default:
-      throw new Error(`Unsupported structure type: ${props.structureType}`);
-  }
+const config = computed(() => STRUCTURE_FIELDS[props.structureType]);
+
+const isChanged = computed(() => {
+  const nameChanged = name.value !== originalName;
+  const selectionChanged = new Set(selected.value).size !== new Set(originalConnections.value).size
+    || selected.value.some(id => !originalConnections.value.includes(id));
+  return nameChanged || selectionChanged;
 });
 
 const loadExistingConnections = async () => {
@@ -153,7 +112,10 @@ const handleSubmit = async () => {
 
   if (!validateForm()) return;
   if (isLoading.value) return;
-
+  if (!isChanged.value) {
+    notificationStore.addAlertNotification("Jokių pakeitimų nerasta.");
+    return;
+  }
   try {
     isLoading.value = true;
 
@@ -164,7 +126,11 @@ const handleSubmit = async () => {
       trimText(name.value)
     );
 
-    if (existing.items.length > 0) {
+    const duplicates = existing.items.filter(
+      (item) => item.id !== props.selectedItem.id
+    );
+
+    if (duplicates.length > 0) {
       notificationStore.addErrorNotification(
         "Struktūra su tokiu pavadinimu jau egzistuoja"
       );
@@ -191,13 +157,12 @@ const handleSubmit = async () => {
         [config.value.linkFields.child]: props.selectedItem.id,
       });
     }
-    
-    originalConnections.value = [...selected.value];
 
+    originalConnections.value = [...selected.value];
 
     const structureData = { name: trimText(name.value) };
 
-    const createdStructure = await structureService.updateStructure(
+    await structureService.updateStructure(
       props.structureType,
       props.selectedItem.id!,
       structureData
@@ -300,8 +265,8 @@ onMounted(() => {
           ></span>
           {{
             isLoading
-              ? "Kuriama..."
-              : `Sukurti ${
+              ? "Redaguojama..."
+              : `Redaguoti ${
                   props.structureType === "divisions"
                     ? "padalinį"
                     : props.structureType === "departments"

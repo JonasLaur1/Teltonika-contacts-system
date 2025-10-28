@@ -101,13 +101,18 @@ const handlePageChange = (newPage: number) => {
   getStructureItems();
 };
 
+const resetModalState = () => {
+  selectedItem.value = null;
+  deleteForm.value = false;
+  editForm.value = false;
+  createForm.value = false;
+  modalState.value = false;
+};
+
 const openModal = () => {
   modalState.value = !modalState.value;
   if (!modalState.value) {
-    selectedItem.value = null;
-    deleteForm.value = false;
-    editForm.value = false;
-    createForm.value = false;
+    resetModalState()
   }
 };
 
@@ -125,11 +130,7 @@ const handleCreateStructure = (item: any) => {
 };
 
 const handleUpdate = () => {
-  selectedItem.value = null;
-  deleteForm.value = false;
-  createForm.value = false;
-  editForm.value = false;
-  openModal();
+  resetModalState()
   getStructureItems();
 };
 
