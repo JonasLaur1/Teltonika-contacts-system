@@ -7,13 +7,21 @@ import type User from "@/types/User";
 import Pagination from "@/components/Pagination.vue";
 import ListRow from "@/components/ListRow.vue";
 import CompaniesListHeader from "@/components/CompaniesListHeader.vue";
-
+import Modal from "@/components/Modal.vue";
+import AddAdminForm from "@/components/forms/AddAdminForm.vue";
 
 const currentPage = ref(1);
 const itemsPerPage = 5;
 const totalPages = ref<number>(1);
 const foundTotal = ref(0);
-const adminList = ref<User[]>([])
+const adminList = ref<User[]>([]);
+const modalState = ref(false);
+const deleteForm = ref(false);
+const createForm = ref(false);
+const editAdminForm = ref(false);
+const editPermissionsForm = ref(false)
+const selectedItem = ref<User | null>(null)
+
 const authStore = useAuthStore();
 
 const columnsMap = {
@@ -29,12 +37,20 @@ const handlePageChange = (newPage: number) => {
   getAdmins();
 };
 
-const getAdmins = async() => {
-    const response = await adminService.getAdmins(currentPage.value, itemsPerPage)
-    adminList.value = response.items as User[]
-    totalPages.value = response.totalPages
-    foundTotal.value = response.totalItems
+const getAdmins = async () => {
+  const response = await adminService.getAdmins(
+    currentPage.value,
+    itemsPerPage
+  );
+  adminList.value = response.items as User[];
+  totalPages.value = response.totalPages;
+  foundTotal.value = response.totalItems;
 };
+
+const handleCreateAdmin = () =>{
+  createForm.value = true
+  openModal()
+}
 
 const handleEditAdmin = (admin: User) => {
   console.log("Edit admin:", admin);
@@ -47,19 +63,47 @@ const handleEditPermissions = (admin: User) => {
 const handleDeleteAdmin = (admin: User) => {
   console.log("Delete admin:", admin);
 };
-onMounted(() =>{
-    getAdmins()
-})
+
+const resetModalState = () => {
+  selectedItem.value = null;
+  deleteForm.value = false;
+  editAdminForm.value = false;
+  editPermissionsForm.value = false;
+  createForm.value = false;
+  modalState.value = false;
+};
+
+const openModal = () => {
+  modalState.value = !modalState.value;
+  if (!modalState.value) {
+    resetModalState()
+  }
+};
+
+onMounted(() => {
+  getAdmins();
+});
 </script>
 
 <template>
+  <Modal
+    :modalState="modalState"
+    @closeModal="openModal"
+    :deleteForm="deleteForm"
+  >
+  <AddAdminForm 
+  
+  />
+
+  </Modal>
   <div class="ml-10 mr-10">
     <h1 class="text-3xl font-light my-5">Admin paskyros</h1>
     <div
       class="flex justify-start items-center gap-8"
       v-if="authStore.userPermissions.canEditPermissions"
     >
-      <PlusButton />
+      <PlusButton 
+      @createCompany="handleCreateAdmin"/>
       <p>Pridėti naują admin paskyrą</p>
     </div>
     <ContactListEmpty

@@ -7,5 +7,26 @@ export default {
       .collection("users")
       .getList(page, perPage, { sort: "-created" });
 
-      return result
-  },};
+    return result;
+  },
+
+  async addAdmin(data: any) {
+    try {
+      const record = await pb.collection("users").create(data);
+    } catch (error) {
+      console.log(error)
+      throw error;
+    }
+  },
+
+  async addPermissions(permissions: any) {
+    try {
+      const record = await pb
+        .collection("user_permissions")
+        .create(permissions);
+      return record;
+    } catch (error) {
+      throw error;
+    }
+  },
+};
