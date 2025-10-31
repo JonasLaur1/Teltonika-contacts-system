@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import adminService from "@/services/adminService";
-import { ref } from "vue";
+import { trimText } from "@/utils/textTrimming";
+import { computed, ref } from "vue";
 
 const isLoading = ref(false);
 const name = ref("");
@@ -60,6 +61,13 @@ const permissionCategories = [
   },
 ];
 
+const emit = defineEmits<{
+  (e: "createdAdmin", password: string): void;
+}>();
+const buttonText = computed(() => {
+  return selectedFile.value ? "Pakeisti nuotrauką" : "Įkelti nuotrauką";
+});
+
 const handleFileChange = (event: Event) => {
   const target = event.target as HTMLInputElement;
   selectedFile.value = target.files?.[0] ?? null;
@@ -71,8 +79,8 @@ const handleSubmit = async () => {
     console.log(response);
 
     const adminData = {
-      username: name.value,
-      email: email.value,
+      username: trimText(name.value),
+      email: trimText(email.value),
       password: "AdminTest123!",
       passwordConfirm: "AdminTest123!",
       permissions_id: response.id,
@@ -80,6 +88,7 @@ const handleSubmit = async () => {
     };
 
     const result = await adminService.addAdmin(adminData);
+    emit("createdAdmin", adminData.password);
   } catch (error) {
     console.log(error);
   }
@@ -129,7 +138,7 @@ const handleSubmit = async () => {
                 <span
                   class="inline-block bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm font-medium"
                 >
-                  ĮKELTI NUOTRAUKĄ
+                  {{ buttonText }}
                 </span>
               </label>
               <p v-if="!selectedFile" class="text-gray-500 text-sm mt-2">

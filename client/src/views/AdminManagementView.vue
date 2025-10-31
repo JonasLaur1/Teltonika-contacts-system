@@ -9,6 +9,7 @@ import ListRow from "@/components/ListRow.vue";
 import CompaniesListHeader from "@/components/CompaniesListHeader.vue";
 import Modal from "@/components/Modal.vue";
 import AddAdminForm from "@/components/forms/AddAdminForm.vue";
+import TempPasswordForm from "@/components/forms/TempPasswordForm.vue";
 
 const currentPage = ref(1);
 const itemsPerPage = 5;
@@ -18,10 +19,11 @@ const adminList = ref<User[]>([]);
 const modalState = ref(false);
 const deleteForm = ref(false);
 const createForm = ref(false);
+const tempPasswordForm = ref(false)
 const editAdminForm = ref(false);
 const editPermissionsForm = ref(false)
 const selectedItem = ref<User | null>(null)
-
+const tempPassword = ref('')
 const authStore = useAuthStore();
 
 const columnsMap = {
@@ -52,6 +54,14 @@ const handleCreateAdmin = () =>{
   openModal()
 }
 
+const handleTempPassword = (password: string) =>{
+  tempPassword.value = password
+  resetModalState();
+  getAdmins();
+  openModal()
+  tempPasswordForm.value = true
+}
+
 const handleEditAdmin = (admin: User) => {
   console.log("Edit admin:", admin);
 };
@@ -70,6 +80,7 @@ const resetModalState = () => {
   editAdminForm.value = false;
   editPermissionsForm.value = false;
   createForm.value = false;
+  tempPasswordForm.value = false
   modalState.value = false;
 };
 
@@ -91,9 +102,15 @@ onMounted(() => {
     @closeModal="openModal"
     :deleteForm="deleteForm"
   >
-  <AddAdminForm 
-  
+  <AddAdminForm
+  v-if="createForm"
+  @createdAdmin="handleTempPassword"
   />
+  <TempPasswordForm 
+  :password="tempPassword"
+  v-if="tempPasswordForm"
+  />
+
 
   </Modal>
   <div class="ml-10 mr-10">
