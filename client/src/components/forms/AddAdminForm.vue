@@ -2,11 +2,13 @@
 import adminService from "@/services/adminService";
 import { trimText } from "@/utils/textTrimming";
 import { computed, ref } from "vue";
+import { validateName, validateEmail } from "@/utils/Validations";
 
 const isLoading = ref(false);
 const name = ref("");
 const email = ref("");
 const selectedFile = ref<File | null>(null);
+const errors = ref<Record<string, string>>({});
 
 const permissions = ref({
   edit_employees: false,
@@ -64,16 +66,49 @@ const permissionCategories = [
 const emit = defineEmits<{
   (e: "createdAdmin", password: string): void;
 }>();
+
 const buttonText = computed(() => {
   return selectedFile.value ? "Pakeisti nuotrauką" : "Įkelti nuotrauką";
+});
+
+const hasAnyPermission = computed(() =>
+  Object.values(permissions.value).some((val) => val)
+);
+
+const validateForm = (): boolean => {
+  errors.value = {};
+
+  const nameError = validateName(name.value);
+  if (nameError) errors.value.name = nameError;
+
+  const emailError = validateEmail(email.value);
+  if (emailError) errors.value.email = emailError;
+
+  if (!hasAnyPermission.value) {
+    errors.value.permissions = "Pasirinkite bent vieną leidimą";
+  }
+
+  return Object.keys(errors.value).length === 0;
+};
+
+const canSubmit = computed(() => {
+  return (
+    !isLoading.value &&
+    validateName(name.value) === "" &&
+    validateEmail(email.value) === "" &&
+    hasAnyPermission.value
+  );
 });
 
 const handleFileChange = (event: Event) => {
   const target = event.target as HTMLInputElement;
   selectedFile.value = target.files?.[0] ?? null;
+  if (target) target.value = "";
 };
 
 const handleSubmit = async () => {
+  if (!validateForm()) return;
+
   try {
     const response = await adminService.addPermissions(permissions.value);
     console.log(response);
@@ -110,10 +145,19 @@ const handleSubmit = async () => {
                 v-model="name"
                 type="text"
                 placeholder="Įveskite vardą..."
-                class="w-full bg-[#F1F2F4] p-3 rounded-md focus:outline-none focus:ring-2 transition-colors border border-gray-300 focus:ring-blue-500"
+                @input="errors.name = ''"
+                @blur="errors.name = validateName(name)"
+                :class="[
+                  'w-full bg-[#F1F2F4] p-3 rounded-md focus:outline-none focus:ring-2 transition-colors',
+                  errors.name
+                    ? 'border-2 border-red-500 focus:ring-red-500'
+                    : 'border border-gray-300 focus:ring-blue-500',
+                ]"
               />
+              <p v-if="errors.name" class="text-red-500 text-sm mt-1">
+                {{ errors.name }}
+              </p>
             </div>
-
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">
                 Elektroninis paštas:
@@ -128,9 +172,19 @@ const handleSubmit = async () => {
                   v-model="email"
                   type="email"
                   placeholder="Įveskite el. pašto adresą..."
-                  class="w-full bg-[#F1F2F4] pl-12 pr-4 py-3 rounded-md focus:outline-none focus:ring-2 transition-colors border border-gray-300 focus:ring-blue-500"
+                  @input="errors.email = ''"
+                  @blur="errors.email = validateEmail(email)"
+                  :class="[
+                    'w-full bg-[#F1F2F4] pl-12 pr-4 py-3 rounded-md focus:outline-none focus:ring-2 transition-colors',
+                    errors.email
+                      ? 'border-2 border-red-500 focus:ring-red-500'
+                      : 'border border-gray-300 focus:ring-blue-500',
+                  ]"
                 />
               </div>
+              <p v-if="errors.email" class="text-red-500 text-sm mt-1">
+                {{ errors.email }}
+              </p>
             </div>
 
             <div>
@@ -187,6 +241,9 @@ const handleSubmit = async () => {
                   </label>
                 </div>
               </div>
+              <p v-if="errors.permissions" class="text-red-500 text-sm mt-2">
+                {{ errors.permissions }}
+              </p>
             </div>
           </div>
         </div>
@@ -195,7 +252,7 @@ const handleSubmit = async () => {
       <div class="flex justify-end pt-4">
         <button
           type="submit"
-          :disabled="isLoading"
+          :disabled="isLoading || !canSubmit"
           class="w-1/3 bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           <span v-if="isLoading">Kuriama...</span>
