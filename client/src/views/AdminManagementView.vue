@@ -10,6 +10,7 @@ import CompaniesListHeader from "@/components/CompaniesListHeader.vue";
 import Modal from "@/components/Modal.vue";
 import AddAdminForm from "@/components/forms/AddAdminForm.vue";
 import TempPasswordForm from "@/components/forms/TempPasswordForm.vue";
+import DeleteAdminForm from "@/components/forms/DeleteAdminForm.vue";
 
 const currentPage = ref(1);
 const itemsPerPage = 5;
@@ -19,11 +20,11 @@ const adminList = ref<User[]>([]);
 const modalState = ref(false);
 const deleteForm = ref(false);
 const createForm = ref(false);
-const tempPasswordForm = ref(false)
+const tempPasswordForm = ref(false);
 const editAdminForm = ref(false);
-const editPermissionsForm = ref(false)
-const selectedItem = ref<User | null>(null)
-const tempPassword = ref('')
+const editPermissionsForm = ref(false);
+const selectedItem = ref<User | null>(null);
+const tempPassword = ref("");
 const authStore = useAuthStore();
 
 const columnsMap = {
@@ -49,18 +50,18 @@ const getAdmins = async () => {
   foundTotal.value = response.totalItems;
 };
 
-const handleCreateAdmin = () =>{
-  createForm.value = true
-  openModal()
-}
+const handleCreateAdmin = () => {
+  createForm.value = true;
+  openModal();
+};
 
-const handleTempPassword = (password: string) =>{
-  tempPassword.value = password
+const handleTempPassword = (password: string) => {
+  tempPassword.value = password;
   resetModalState();
   getAdmins();
-  openModal()
-  tempPasswordForm.value = true
-}
+  openModal();
+  tempPasswordForm.value = true;
+};
 
 const handleEditAdmin = (admin: User) => {
   console.log("Edit admin:", admin);
@@ -71,7 +72,9 @@ const handleEditPermissions = (admin: User) => {
 };
 
 const handleDeleteAdmin = (admin: User) => {
-  console.log("Delete admin:", admin);
+  selectedItem.value = admin;
+  deleteForm.value = true;
+  openModal()
 };
 
 const resetModalState = () => {
@@ -80,14 +83,14 @@ const resetModalState = () => {
   editAdminForm.value = false;
   editPermissionsForm.value = false;
   createForm.value = false;
-  tempPasswordForm.value = false
+  tempPasswordForm.value = false;
   modalState.value = false;
 };
 
 const openModal = () => {
   modalState.value = !modalState.value;
   if (!modalState.value) {
-    resetModalState()
+    resetModalState();
   }
 };
 
@@ -102,16 +105,9 @@ onMounted(() => {
     @closeModal="openModal"
     :deleteForm="deleteForm"
   >
-  <AddAdminForm
-  v-if="createForm"
-  @createdAdmin="handleTempPassword"
-  />
-  <TempPasswordForm 
-  :password="tempPassword"
-  v-if="tempPasswordForm"
-  />
-
-
+    <AddAdminForm v-if="createForm" @createdAdmin="handleTempPassword" />
+    <TempPasswordForm :password="tempPassword" v-if="tempPasswordForm" />
+    <DeleteAdminForm :item="selectedItem" v-if="deleteForm" />
   </Modal>
   <div class="ml-10 mr-10">
     <h1 class="text-3xl font-light my-5">Admin paskyros</h1>
@@ -119,8 +115,7 @@ onMounted(() => {
       class="flex justify-start items-center gap-8"
       v-if="authStore.userPermissions.canEditPermissions"
     >
-      <PlusButton 
-      @createCompany="handleCreateAdmin"/>
+      <PlusButton @createCompany="handleCreateAdmin" />
       <p>Pridėti naują admin paskyrą</p>
     </div>
     <ContactListEmpty

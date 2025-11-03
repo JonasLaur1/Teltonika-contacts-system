@@ -19,6 +19,15 @@ export default {
     }
   },
 
+  async deleteAdmin(id: string){
+    try{
+      await pb.collection('users').delete(id);
+    }catch(error){
+      console.log(error)
+      throw error
+    }
+  },
+
   async addPermissions(permissions: any) {
     try {
       const record = await pb
@@ -29,4 +38,6 @@ export default {
       throw error;
     }
   },
+
+
 };
