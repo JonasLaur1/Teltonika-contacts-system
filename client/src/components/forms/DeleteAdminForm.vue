@@ -1,13 +1,18 @@
 <script lang="ts" setup>
 import adminService from "@/services/adminService";
+import type User from "@/types/User";
+import { ref } from "vue";
+
+const isLoading = ref(false)
+const emit = defineEmits(["closeModal", "itemDeleted"]);
 
 const props = defineProps<{
-  item: User;
+  admin: User | null;
 }>();
 
 const handleDelete = async() =>{
   try{
-    const response = await adminService.deleteAdmin(props.item.id)
+    const response = await adminService.deleteAdmin(props.admin!.id)
 
   }catch(error){
     console.log(error)
@@ -19,7 +24,7 @@ const handleDelete = async() =>{
 <template>
   <div class="flex flex-col gap-6 p-6">
     <h1 class="text-3xl font-semibold">Ar tikrai norite ištrinti paskyrą?</h1>
-    <p>Paskyros vardas: {{ item.username }}</p>
+    <p>Paskyros vardas: {{ admin!.username }}</p>
     <div class="flex justify-end gap-6 text-[#0054A6] font-medium text-lg">
       <button
         @click="emit('closeModal')"

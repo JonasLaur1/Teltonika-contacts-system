@@ -11,6 +11,9 @@ import Modal from "@/components/Modal.vue";
 import AddAdminForm from "@/components/forms/AddAdminForm.vue";
 import TempPasswordForm from "@/components/forms/TempPasswordForm.vue";
 import DeleteAdminForm from "@/components/forms/DeleteAdminForm.vue";
+import EditPermissionsForm from "@/components/forms/EditPermissionsForm.vue";
+import EditAdminForm from "@/components/forms/EditAdminForm.vue";
+import ContactListEmpty from "@/components/ContactListEmpty.vue";
 
 const currentPage = ref(1);
 const itemsPerPage = 5;
@@ -64,11 +67,15 @@ const handleTempPassword = (password: string) => {
 };
 
 const handleEditAdmin = (admin: User) => {
-  console.log("Edit admin:", admin);
+  selectedItem.value = admin;
+  editAdminForm.value = true;
+  openModal()
 };
 
 const handleEditPermissions = (admin: User) => {
-  console.log("Edit permissions:", admin.permissions_id);
+  selectedItem.value = admin;
+  editPermissionsForm.value = true;
+  openModal()
 };
 
 const handleDeleteAdmin = (admin: User) => {
@@ -78,6 +85,7 @@ const handleDeleteAdmin = (admin: User) => {
 };
 
 const resetModalState = () => {
+  getAdmins()
   selectedItem.value = null;
   deleteForm.value = false;
   editAdminForm.value = false;
@@ -105,9 +113,11 @@ onMounted(() => {
     @closeModal="openModal"
     :deleteForm="deleteForm"
   >
-    <AddAdminForm v-if="createForm" @createdAdmin="handleTempPassword" />
+    <AddAdminForm :mode="'create'" v-if="createForm" @createdAdmin="handleTempPassword" />
     <TempPasswordForm :password="tempPassword" v-if="tempPasswordForm" />
-    <DeleteAdminForm :item="selectedItem" v-if="deleteForm" />
+    <DeleteAdminForm :admin="selectedItem" v-if="deleteForm" />
+    <EditPermissionsForm :admin="selectedItem" v-if="editPermissionsForm" @updated="resetModalState"/>
+    <AddAdminForm :mode="'edit'" :admin="selectedItem" v-if="editAdminForm" @updated="resetModalState"/>
   </Modal>
   <div class="ml-10 mr-10">
     <h1 class="text-3xl font-light my-5">Admin paskyros</h1>

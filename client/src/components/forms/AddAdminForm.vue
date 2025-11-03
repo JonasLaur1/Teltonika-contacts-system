@@ -1,14 +1,22 @@
 <script setup lang="ts">
 import adminService from "@/services/adminService";
 import { trimText } from "@/utils/textTrimming";
-import { computed, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { validateName, validateEmail } from "@/utils/Validations";
+import { permissionCategories } from "@/constants/permissions";
+import type User from "@/types/User";
 
 const isLoading = ref(false);
 const name = ref("");
 const email = ref("");
 const selectedFile = ref<File | null>(null);
+const currentAvatar = ref<string | null>(null);
 const errors = ref<Record<string, string>>({});
+
+const props = defineProps<{
+  mode: "create" | "edit";
+  admin?: User | null;
+}>();
 
 const permissions = ref({
   edit_employees: false,
@@ -24,47 +32,9 @@ const permissions = ref({
   delete_companies: false,
 });
 
-const permissionCategories = [
-  {
-    title: "Darbuotojai",
-    permissions: [
-      { key: "edit_employees", label: "Redaguoti ir kurti kontaktus" },
-      { key: "delete_employees", label: "Šalinti kontaktus" },
-    ],
-  },
-  {
-    title: "Ofisai",
-    permissions: [
-      { key: "edit_offices", label: "Redaguoti ir kurti ofisus" },
-      { key: "delete_offices", label: "Šalinti ofisus" },
-    ],
-  },
-  {
-    title: "Struktūra",
-    permissions: [
-      { key: "edit_structure", label: "Redaguoti ir kurti struktūrą" },
-      { key: "delete_structure", label: "Šalinti struktūrą" },
-    ],
-  },
-  {
-    title: "Įmonės",
-    permissions: [
-      { key: "edit_companies", label: "Redaguoti ir kurti įmones" },
-      { key: "delete_companies", label: "Šalinti įmones" },
-    ],
-  },
-  {
-    title: "Leidimai",
-    permissions: [
-      { key: "read_permissions", label: "Peržiūrėti leidimus" },
-      { key: "edit_permissions", label: "Redaguoti leidimus" },
-      { key: "delete_permissions", label: "Šalinti leidimus" },
-    ],
-  },
-];
-
 const emit = defineEmits<{
   (e: "createdAdmin", password: string): void;
+  (e: "updated"): void
 }>();
 
 const buttonText = computed(() => {
@@ -84,7 +54,7 @@ const validateForm = (): boolean => {
   const emailError = validateEmail(email.value);
   if (emailError) errors.value.email = emailError;
 
-  if (!hasAnyPermission.value) {
+  if (props.mode === 'create' && !hasAnyPermission.value) {
     errors.value.permissions = "Pasirinkite bent vieną leidimą";
   }
 
@@ -92,12 +62,8 @@ const validateForm = (): boolean => {
 };
 
 const canSubmit = computed(() => {
-  return (
-    !isLoading.value &&
-    validateName(name.value) === "" &&
-    validateEmail(email.value) === "" &&
-    hasAnyPermission.value
-  );
+  const basicValid = validateName(name.value) === "" && validateEmail(email.value) === "";
+  return !isLoading.value && basicValid && (props.mode === "edit" || hasAnyPermission.value);
 });
 
 const handleFileChange = (event: Event) => {
@@ -110,24 +76,43 @@ const handleSubmit = async () => {
   if (!validateForm()) return;
 
   try {
-    const response = await adminService.addPermissions(permissions.value);
-    console.log(response);
+    if (props.mode === "create") {
+      const response = await adminService.addPermissions(permissions.value);
 
-    const adminData = {
-      username: trimText(name.value),
-      email: trimText(email.value),
-      password: "AdminTest123!",
-      passwordConfirm: "AdminTest123!",
-      permissions_id: response.id,
-      avatar: selectedFile.value,
-    };
+      const adminData = {
+        username: trimText(name.value),
+        email: trimText(email.value),
+        password: "AdminTest123!",
+        passwordConfirm: "AdminTest123!",
+        permissions_id: response.id,
+        avatar: selectedFile.value,
+      };
 
-    const result = await adminService.addAdmin(adminData);
-    emit("createdAdmin", adminData.password);
+      const result = await adminService.addAdmin(adminData);
+      emit("createdAdmin", adminData.password);
+    } else if (props.mode === "edit" && props.admin) {
+      // Edit admin (name, email, avatar)
+      const adminData = {
+        username: trimText(name.value),
+        email: trimText(email.value),
+        avatar: selectedFile.value,
+      };
+      await adminService.updateAdmin(props.admin.id, adminData);
+      emit("updated");
+    }
   } catch (error) {
     console.log(error);
   }
 };
+
+  onMounted(() => {
+    if (props.mode === "edit" && props.admin) {
+      name.value = props.admin.username;
+      email.value = props.admin.email;
+      currentAvatar.value = props.admin.avatar
+    }
+  });
+
 </script>
 
 <template>
@@ -195,7 +180,7 @@ const handleSubmit = async () => {
                   {{ buttonText }}
                 </span>
               </label>
-              <p v-if="!selectedFile" class="text-gray-500 text-sm mt-2">
+              <p v-if="!selectedFile && !currentAvatar" class="text-gray-500 text-sm mt-2">
                 No photo uploaded.
               </p>
               <p v-else class="text-gray-500 text-sm mt-2">
@@ -211,7 +196,7 @@ const handleSubmit = async () => {
             </div>
           </div>
 
-          <div class="space-y-4 min-w-[300px]">
+          <div v-if="mode === 'create'" class="space-y-4 min-w-[300px]">
             <div class="flex items-center justify-between">
               <h3 class="text-lg font-medium text-gray-900">Leidimai</h3>
             </div>
@@ -235,9 +220,8 @@ const handleSubmit = async () => {
                     />
                     <span
                       class="text-sm text-gray-700 group-hover:text-gray-900"
+                      >{{ permission.label }}</span
                     >
-                      {{ permission.label }}
-                    </span>
                   </label>
                 </div>
               </div>

@@ -28,6 +28,15 @@ export default {
     }
   },
 
+  async updateAdmin(id:string, data: any){
+    try{
+      const record = await pb.collection('users').update(id, data);
+    }catch(error){
+      throw error
+    }
+
+  },
+
   async addPermissions(permissions: any) {
     try {
       const record = await pb
@@ -38,6 +47,14 @@ export default {
       throw error;
     }
   },
+
+  async updatePermissions(id:string, permissions: any){
+    try{
+      const record = await pb.collection('user_permissions').update(id, permissions);
+    }catch(error){
+      throw error
+    }
+  }
 
 
 };
