@@ -4,6 +4,7 @@ import { trimText } from "@/utils/textTrimming";
 import { computed, onMounted, ref } from "vue";
 import { validateName, validateEmail } from "@/utils/Validations";
 import { permissionCategories } from "@/constants/permissions";
+import { useNotificationStore } from "@/stores/NotificationStore";
 import type User from "@/types/User";
 
 const isLoading = ref(false);
@@ -12,6 +13,8 @@ const email = ref("");
 const selectedFile = ref<File | null>(null);
 const currentAvatar = ref<string | null>(null);
 const errors = ref<Record<string, string>>({});
+
+const notificationStore = useNotificationStore();
 
 const props = defineProps<{
   mode: "create" | "edit";
@@ -34,11 +37,26 @@ const permissions = ref({
 
 const emit = defineEmits<{
   (e: "createdAdmin", password: string): void;
-  (e: "updated"): void
+  (e: "updated"): void;
 }>();
 
 const buttonText = computed(() => {
   return selectedFile.value ? "Pakeisti nuotrauką" : "Įkelti nuotrauką";
+});
+
+const headerText = computed(() => {
+  return props.mode === "create"
+    ? "Pridėti naują admin paskyrą"
+    : "Redaguoti admin paskyrą";
+});
+
+const submitButtonText = computed(() => {
+  if (isLoading.value) {
+    return props.mode === "create" ? "Kuriama..." : "Išsaugoma...";
+  }
+  return props.mode === "create"
+    ? "Sukurti admin paskyrą"
+    : "Išsaugoti pakeitimus";
 });
 
 const hasAnyPermission = computed(() =>
@@ -54,7 +72,7 @@ const validateForm = (): boolean => {
   const emailError = validateEmail(email.value);
   if (emailError) errors.value.email = emailError;
 
-  if (props.mode === 'create' && !hasAnyPermission.value) {
+  if (props.mode === "create" && !hasAnyPermission.value) {
     errors.value.permissions = "Pasirinkite bent vieną leidimą";
   }
 
@@ -62,14 +80,29 @@ const validateForm = (): boolean => {
 };
 
 const canSubmit = computed(() => {
-  const basicValid = validateName(name.value) === "" && validateEmail(email.value) === "";
-  return !isLoading.value && basicValid && (props.mode === "edit" || hasAnyPermission.value);
+  const basicValid =
+    validateName(name.value) === "" && validateEmail(email.value) === "";
+  return (
+    !isLoading.value &&
+    basicValid &&
+    (props.mode === "edit" || hasAnyPermission.value)
+  );
 });
 
 const handleFileChange = (event: Event) => {
   const target = event.target as HTMLInputElement;
   selectedFile.value = target.files?.[0] ?? null;
   if (target) target.value = "";
+};
+
+const generatePassword = (length = 8) => {
+  const chars =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+";
+  let password = "";
+  for (let i = 0; i < length; i++) {
+    password += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return password;
 };
 
 const handleSubmit = async () => {
@@ -79,45 +112,64 @@ const handleSubmit = async () => {
     if (props.mode === "create") {
       const response = await adminService.addPermissions(permissions.value);
 
+      const password = generatePassword(10);
+
       const adminData = {
         username: trimText(name.value),
         email: trimText(email.value),
-        password: "AdminTest123!",
-        passwordConfirm: "AdminTest123!",
+        password: password,
+        passwordConfirm: password,
         permissions_id: response.id,
         avatar: selectedFile.value,
       };
 
       const result = await adminService.addAdmin(adminData);
+      notificationStore.addSuccessNotification(
+        "Naujos paskyros " + adminData.email + " sukūrimas pavyko!"
+      );
       emit("createdAdmin", adminData.password);
     } else if (props.mode === "edit" && props.admin) {
-      // Edit admin (name, email, avatar)
+      const nameUnchanged = name.value === props.admin.username;
+      const emailUnchanged = email.value === props.admin.email;
+      const avatarUnchanged = !selectedFile.value;
+
+      if (nameUnchanged && emailUnchanged && avatarUnchanged) {
+        notificationStore.addAlertNotification("Nėra jokių pakeitimų");
+        return;
+      }
+
       const adminData = {
         username: trimText(name.value),
         email: trimText(email.value),
         avatar: selectedFile.value,
       };
       await adminService.updateAdmin(props.admin.id, adminData);
+      notificationStore.addSuccessNotification(
+        "Paskyros " + adminData.email + " pakeitimai išsaugoti!"
+      );
+
       emit("updated");
     }
   } catch (error) {
+    notificationStore.addSuccessNotification(
+      "Iškilo klaida atliekant veiksmus su paskyra " + email.value
+    );
     console.log(error);
   }
 };
 
-  onMounted(() => {
-    if (props.mode === "edit" && props.admin) {
-      name.value = props.admin.username;
-      email.value = props.admin.email;
-      currentAvatar.value = props.admin.avatar
-    }
-  });
-
+onMounted(() => {
+  if (props.mode === "edit" && props.admin) {
+    name.value = props.admin.username;
+    email.value = props.admin.email;
+    currentAvatar.value = props.admin.avatar;
+  }
+});
 </script>
 
 <template>
   <div class="flex flex-col gap-6 p-6">
-    <h1 class="text-3xl font-semibold">Pridėti naują admin paskyrą</h1>
+    <h1 class="text-3xl font-semibold">{{ headerText }}</h1>
     <form @submit.prevent="handleSubmit" class="space-y-6 max-w-5xl">
       <div>
         <div class="flex flex-row gap-6">
@@ -180,7 +232,10 @@ const handleSubmit = async () => {
                   {{ buttonText }}
                 </span>
               </label>
-              <p v-if="!selectedFile && !currentAvatar" class="text-gray-500 text-sm mt-2">
+              <p
+                v-if="!selectedFile && !currentAvatar"
+                class="text-gray-500 text-sm mt-2"
+              >
                 No photo uploaded.
               </p>
               <p v-else class="text-gray-500 text-sm mt-2">
@@ -239,8 +294,7 @@ const handleSubmit = async () => {
           :disabled="isLoading || !canSubmit"
           class="w-1/3 bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          <span v-if="isLoading">Kuriama...</span>
-          <span v-else>Sukurti admin paskyrą</span>
+          <span>{{ submitButtonText }}</span>
         </button>
       </div>
     </form>

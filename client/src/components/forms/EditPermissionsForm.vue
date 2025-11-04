@@ -2,11 +2,15 @@
 import { permissionCategories } from "@/constants/permissions";
 import adminService from "@/services/adminService";
 import userService from "@/services/userService";
+import { useNotificationStore } from "@/stores/NotificationStore";
 import type User from "@/types/User";
 import { onMounted, ref } from "vue";
 
 const errors = ref<Record<string, string>>({});
-const isLoading = ref(false)
+const isLoading = ref(false);
+
+const notificationStore = useNotificationStore();
+
 const props = defineProps<{
   admin: User | null;
 }>();
@@ -31,9 +35,9 @@ const emit = defineEmits<{
 
 const getAdminPermissions = async () => {
   if (!props.admin) return;
-  
+
   try {
-    isLoading.value = true
+    isLoading.value = true;
     const response = await userService.getUserPermissions(
       props.admin.permissions_id
     );
@@ -44,18 +48,27 @@ const getAdminPermissions = async () => {
     });
   } catch (error) {
     console.log(error);
-  } finally{
-    isLoading.value = false
+  } finally {
+    isLoading.value = false;
   }
 };
-const handleSubmit = async() => {
-    try{
-        const response = await adminService.updatePermissions(props.admin?.permissions_id!, permissions.value)
-        console.log("Success")
-        emit("updated")
-    }catch(error){
-        console.log(error)
-    }
+const handleSubmit = async () => {
+  try {
+    const response = await adminService.updatePermissions(
+      props.admin?.permissions_id!,
+      permissions.value
+    );
+    notificationStore.addSuccessNotification(
+      "Sėkmingai atnaujinti paskyros " + props.admin?.email + " leidimai"
+    );
+    emit("updated");
+  } catch (error) {
+    notificationStore.addErrorNotification(
+      "Nepavyko atnaujinti paskyros " + props.admin?.email + " leidimų"
+    );
+
+    console.log(error);
+  }
 };
 onMounted(() => {
   getAdminPermissions();

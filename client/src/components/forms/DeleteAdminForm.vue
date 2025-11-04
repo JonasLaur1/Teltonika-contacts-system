@@ -1,24 +1,33 @@
 <script lang="ts" setup>
 import adminService from "@/services/adminService";
+import { useNotificationStore } from "@/stores/NotificationStore";
 import type User from "@/types/User";
 import { ref } from "vue";
 
-const isLoading = ref(false)
+const isLoading = ref(false);
+
+const notificationStore = useNotificationStore();
+
 const emit = defineEmits(["closeModal", "itemDeleted"]);
 
 const props = defineProps<{
   admin: User | null;
 }>();
 
-const handleDelete = async() =>{
-  try{
-    const response = await adminService.deleteAdmin(props.admin!.id)
-
-  }catch(error){
-    console.log(error)
+const handleDelete = async () => {
+  try {
+    const response = await adminService.deleteAdmin(props.admin!.id);
+    notificationStore.addSuccessNotification(
+      "Sėkmingai ištrinta paskyra " + props.admin?.email
+    );
+    emit("closeModal");
+  } catch (error) {
+    notificationStore.addErrorNotification(
+      "Nepavyko ištrinti paskyros " + props.admin?.email
+    );
+    emit("closeModal");
   }
-}
-
+};
 </script>
 
 <template>

@@ -12,7 +12,6 @@ import AddAdminForm from "@/components/forms/AddAdminForm.vue";
 import TempPasswordForm from "@/components/forms/TempPasswordForm.vue";
 import DeleteAdminForm from "@/components/forms/DeleteAdminForm.vue";
 import EditPermissionsForm from "@/components/forms/EditPermissionsForm.vue";
-import EditAdminForm from "@/components/forms/EditAdminForm.vue";
 import ContactListEmpty from "@/components/ContactListEmpty.vue";
 
 const currentPage = ref(1);
@@ -115,7 +114,7 @@ onMounted(() => {
   >
     <AddAdminForm :mode="'create'" v-if="createForm" @createdAdmin="handleTempPassword" />
     <TempPasswordForm :password="tempPassword" v-if="tempPasswordForm" />
-    <DeleteAdminForm :admin="selectedItem" v-if="deleteForm" />
+    <DeleteAdminForm :admin="selectedItem" v-if="deleteForm" @closeModal="resetModalState" />
     <EditPermissionsForm :admin="selectedItem" v-if="editPermissionsForm" @updated="resetModalState"/>
     <AddAdminForm :mode="'edit'" :admin="selectedItem" v-if="editAdminForm" @updated="resetModalState"/>
   </Modal>
