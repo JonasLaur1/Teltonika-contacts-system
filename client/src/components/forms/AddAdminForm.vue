@@ -151,7 +151,7 @@ const handleSubmit = async () => {
       emit("updated");
     }
   } catch (error) {
-    notificationStore.addSuccessNotification(
+    notificationStore.addErrorNotification(
       "Iškilo klaida atliekant veiksmus su paskyra " + email.value
     );
     console.log(error);
