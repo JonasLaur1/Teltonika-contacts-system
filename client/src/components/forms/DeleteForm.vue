@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import structureService from "@/services/structureService";
 import companiesService from "@/services/companiesService";
+import employeeService from "@/services/employeeService";
 import { useNotificationStore } from "@/stores/NotificationStore";
 import { ref } from "vue";
 import { useAuthStore } from "@/stores/AuthStore";
@@ -66,6 +67,12 @@ const entityNames: Record<string, { singular: string; genitive: string }> = {
   groups: { singular: "grupę", genitive: "grupės" },
 };
 
+const structureToFilterKey: Record<string, string> = {
+  divisions: "division",
+  departments: "department",
+  groups: "group",
+};
+
 const getEntityName = (type: string) => {
   if (type === "company") return entityNames.company;
   return (
@@ -128,6 +135,37 @@ const checkForLowerStructures = async (
   }
 };
 
+const checkForEmployees = async (structureType: string): Promise<boolean> => {
+  const filterKey = structureToFilterKey[structureType];
+  
+  if (!filterKey) {
+    console.warn(`No filter key found for structure type: ${structureType}`);
+    return false;
+  }
+
+  try {
+    const filters = {
+      [filterKey]: props.item.id,
+    };
+
+    console.log('Checking for employees with filters:', filters);
+
+    const [employees] = await employeeService.getEmployees(
+      1,
+      1,
+      "",
+      filters as any
+    );
+
+    console.log('Employee check result:', employees.totalItems);
+
+    return employees.totalItems > 0;
+  } catch (error) {
+    console.error("Error checking employees:", error);
+    return false;
+  }
+};
+
 const handleDelete = async () => {
   if (!props.item) return;
   if (!checkPermissions()) return;
@@ -135,6 +173,23 @@ const handleDelete = async () => {
 
   try {
     isLoading.value = true;
+
+    if (
+      props.config.entityType === "structure" &&
+      props.config.structureType &&
+      ["departments", "divisions", "groups"].includes(props.config.structureType)
+    ) {
+      const hasEmployees = await checkForEmployees(props.config.structureType);
+
+      if (hasEmployees) {
+        const entityName = getEntityName(props.config.entityType);
+        notificationStore.addAlertNotification(
+          `Negalima ištrinti ${entityName.genitive}, kurioje yra priskirtų darbuotojų.`
+        );
+        emit("closeModal");
+        return;
+      }
+    }
 
     if (
       props.config.checkLowerStructures !== false &&
