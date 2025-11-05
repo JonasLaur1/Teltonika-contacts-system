@@ -3,8 +3,14 @@ import type Employee from "@/types/Employee";
 import ContactListHeader from "./ContactListHeader.vue";
 import ContactListRows from "./ContactListRows.vue";
 import ContactListEmpty from "./ContactListEmpty.vue";
+
 defineProps<{
   employees: Employee[];
+}>();
+
+const emit = defineEmits<{
+  edit: [employee: Employee];
+  delete: [employee: Employee];
 }>();
 </script>
 
@@ -19,6 +25,8 @@ defineProps<{
             v-for="employee in employees" 
             :key="employee.id" 
             :employee="employee"
+            @edit="emit('edit', $event)"
+            @delete="emit('delete', $event)"
           />
         </tbody>
       </table>

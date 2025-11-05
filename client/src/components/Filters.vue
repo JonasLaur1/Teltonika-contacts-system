@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import structureService from "@/services/structureService";
+import companiesService from "@/services/companiesService";
 import type Company from "@/types/Companies";
 import type Department from "@/types/Department";
 import type Division from "@/types/Division";
 import type Group from "@/types/Group";
 import type Office from "@/types/Office";
-import { ref, onMounted } from "vue";
+import { ref, onMounted, watch } from "vue";
 import FilterSelect from "./FilterSelect.vue";
-import companiesService from "@/services/companiesService";
 
 const companiesFilter = ref<Company[]>([]);
 const officesFilter = ref<Office[]>([]);
@@ -21,6 +21,17 @@ const selectedDivisionFilter = ref<string | null>(null);
 const selectedDepartmentFilter = ref<string | null>(null);
 const selectedGroupFilter = ref<string | null>(null);
 
+const props = defineProps<{
+  layout?: "horizontal" | "vertical";
+  initialValues?: {
+    company: string | null;
+    office: string | null;
+    division: string | null;
+    department: string | null;
+    group: string | null;
+  };
+}>();
+
 const emit = defineEmits<{
   filtersChanged: [
     filters: {
@@ -32,6 +43,36 @@ const emit = defineEmits<{
     }
   ];
 }>();
+
+// Watch for initial values and load cascading data
+watch(
+  () => props.initialValues,
+  async (newValues) => {
+    if (newValues) {
+      selectedCompanyFilter.value = newValues.company;
+      if (newValues.company) {
+        await loadOfficesForCompany(newValues.company);
+        selectedOfficeFilter.value = newValues.office;
+        
+        if (newValues.office) {
+          await loadDivisionsForOffice(newValues.office);
+          selectedDivisionFilter.value = newValues.division;
+          
+          if (newValues.division) {
+            await loadDepartmentsForDivision(newValues.division);
+            selectedDepartmentFilter.value = newValues.department;
+            
+            if (newValues.department) {
+              await loadGroupsForDepartment(newValues.department);
+              selectedGroupFilter.value = newValues.group;
+            }
+          }
+        }
+      }
+    }
+  },
+  { immediate: true }
+);
 
 function emitFilters() {
   emit("filtersChanged", {
@@ -48,6 +89,46 @@ async function getCompanies() {
   companiesFilter.value = result.items;
 }
 
+async function loadOfficesForCompany(companyId: string) {
+  officesFilter.value = await structureService.getLowerStructures(
+    "companies",
+    "companies_offices",
+    companyId,
+    "company_id",
+    "office_id"
+  );
+}
+
+async function loadDivisionsForOffice(officeId: string) {
+  divisionsFilter.value = await structureService.getLowerStructures(
+    "offices",
+    "offices_divisions",
+    officeId,
+    "office_id",
+    "division_id"
+  );
+}
+
+async function loadDepartmentsForDivision(divisionId: string) {
+  departmentsFilter.value = await structureService.getLowerStructures(
+    "divisions",
+    "divisions_departments",
+    divisionId,
+    "division_id",
+    "department_id"
+  );
+}
+
+async function loadGroupsForDepartment(departmentId: string) {
+  groupsFilter.value = await structureService.getLowerStructures(
+    "departments",
+    "departments_groups",
+    departmentId,
+    "department_id",
+    "group_id"
+  );
+}
+
 async function onCompanyChange() {
   selectedOfficeFilter.value =
     selectedDivisionFilter.value =
@@ -60,13 +141,7 @@ async function onCompanyChange() {
     groupsFilter.value =
       [];
   if (selectedCompanyFilter.value) {
-    officesFilter.value = await structureService.getLowerStructures(
-      "companies",
-      "companies_offices",
-      selectedCompanyFilter.value,
-      "company_id",
-      "office_id"
-    );
+    await loadOfficesForCompany(selectedCompanyFilter.value);
   }
 
   emitFilters();
@@ -80,13 +155,7 @@ async function onOfficeChange() {
   divisionsFilter.value = departmentsFilter.value = groupsFilter.value = [];
 
   if (selectedOfficeFilter.value) {
-    divisionsFilter.value = await structureService.getLowerStructures(
-      "offices",
-      "offices_divisions",
-      selectedOfficeFilter.value,
-      "office_id",
-      "division_id"
-    );
+    await loadDivisionsForOffice(selectedOfficeFilter.value);
   }
   emitFilters();
 }
@@ -97,13 +166,7 @@ async function onDivisionChange() {
 
   if (selectedDivisionFilter.value) {
     try {
-      departmentsFilter.value = await structureService.getLowerStructures(
-        "divisions",
-        "divisions_departments",
-        selectedDivisionFilter.value,
-        "division_id",
-        "department_id"
-      );
+      await loadDepartmentsForDivision(selectedDivisionFilter.value);
     } catch (error) {
       console.error("Error fetching lower structures:", error);
     }
@@ -116,13 +179,7 @@ async function onDepartmentChange() {
 
   groupsFilter.value = [];
   if (selectedDepartmentFilter.value) {
-    groupsFilter.value = await structureService.getLowerStructures(
-      "groups",
-      "departments_groups",
-      selectedDepartmentFilter.value,
-      "department_id",
-      "group_id"
-    );
+    await loadGroupsForDepartment(selectedDepartmentFilter.value);
   }
   emitFilters();
 }
@@ -133,7 +190,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="flex justify-start gap-4">
+  <div :class="layout === 'vertical' ? 'flex flex-col gap-3' : 'flex justify-start gap-4'">
     <FilterSelect
       label="Įmonė"
       :items="companiesFilter"

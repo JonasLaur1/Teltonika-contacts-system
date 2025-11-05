@@ -66,6 +66,24 @@ export default {
     }
   },
 
+  async addEmployee(data: FormData | Record<string, any>): Promise<void> {
+    try {
+      await pb.collection("employees").create(data);
+    } catch (error) {
+      console.error("Error adding employee:", error);
+      throw error;
+    }
+  },
+
+  async updateEmployee(id: string, data: FormData | Record<string, any>): Promise<void> {
+    try {
+      await pb.collection("employees").update(id, data);
+    } catch (error) {
+      console.error("Error updating employee:", error);
+      throw error;
+    }
+  },
+
   async deleteEmployee(id: string): Promise<void> {
     try {
       await pb.collection("employees").delete(id);
