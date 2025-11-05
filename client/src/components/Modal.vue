@@ -57,8 +57,10 @@ const closeModal = () => {
   background: white;
   padding: 2rem;
   border-radius: 8px;
-  max-width: 500px;
+  max-width: 1000px;
   width: 90%;
   position: relative;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 </style>

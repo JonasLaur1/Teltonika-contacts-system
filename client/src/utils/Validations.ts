@@ -18,9 +18,19 @@ export const validateEmail = (email: string) => {
 
 export const validateName = (name: string) => {
   const trimmed = name.trim();
-  if (!trimmed) return 'Įveskite pavadinimą';
-  if (trimmed.length < 2) return 'Pavadinimas turi būti bent iš 2 simbolių.'
-  if (trimmed.length > 50) return 'Pavadinimas negali būti ilgesnis nei 50 simbolių'
+  if (!trimmed) return 'Įveskite reikšmę';
+  if (trimmed.length < 2) return 'Reikšmė turi būti bent iš 2 simbolių.';
+  if (trimmed.length > 50) return 'Reikšmė negali būti ilgesnis nei 50 simbolių';
   if (!/^[A-Za-zÀ-ž0-9&.,'’\-\/\s]+$/.test(trimmed)) return 'Naudojami neleistini simboliai';
   return '';
-}
+};
+
+export const validateStreet = (street: string) => validateName(street);
+export const validateCity = (city: string) => validateName(city);
+export const validateCountry = (country: string) => validateName(country);
+
+export const validateStreetNumber = (streetNumber: string) => {
+  if (!streetNumber || !streetNumber.trim()) return 'Įveskite pastato numerį';
+  if (!/^[\d\s\-]+[A-Za-z]{0,2}$/.test(streetNumber.trim())) return 'Pastato numeris gali turėti tik skaičius, tarpo ir brūkšnio simbolius bei iki dviejų raidžių pabaigoje';
+  return '';
+};
