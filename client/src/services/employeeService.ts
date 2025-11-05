@@ -1,7 +1,7 @@
 import { type ListResult } from "pocketbase";
 import type Employee from "@/types/Employee";
 import { FILTER_MAPPING } from "@/constants/filters";
-import {pb} from "./pocketbase"
+import { pb } from "./pocketbase";
 
 type Filters = {
   company: string | null;
@@ -61,6 +61,14 @@ export default {
         expand: "office_id,company_id,division_id,department_id,group_id",
       });
       return record;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  async deleteEmployee(id: string): Promise<void> {
+    try {
+      await pb.collection("employees").delete(id);
     } catch (error) {
       throw error;
     }

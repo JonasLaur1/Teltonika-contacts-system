@@ -11,6 +11,10 @@ import Pagination from "@/components/Pagination.vue";
 import PerPageSelector from "@/components/PerPageSelector.vue";
 import DisplayTypeToggle from "@/components/DisplayTypeToggle.vue";
 import Loader from "@/components/Loader.vue";
+import PlusButton from "@/components/PlusButton.vue";
+import Modal from "@/components/Modal.vue";
+import EditContactForm from "@/components/forms/EditContactForm.vue";
+import DeleteContactForm from "@/components/forms/DeleteContactForm.vue";
 
 type DisplayStyle = "grid" | "list";
 
@@ -23,6 +27,9 @@ const totalItems = ref(0);
 const currentPage = ref(1);
 const itemsPerPage = ref<number | "All">(25);
 const totalPages = ref<number>(1);
+const editForm = ref(false);
+const deleteForm = ref(false);
+const selectedEmployee = ref<Employee | null>(null);
 
 const filters = reactive<{
   company: string | null;
@@ -86,10 +93,6 @@ const loadMore = async () => {
   await getEmployees(true);
 };
 
-const openModal = () => {
-  modalState.value = !modalState.value;
-};
-
 const handlePerPageChange = (newPerPage: number | "All") => {
   itemsPerPage.value = newPerPage;
   currentPage.value = 1;
@@ -120,6 +123,33 @@ const toggleDisplayType = () => {
   displayType.value = displayType.value === "grid" ? "list" : "grid";
 };
 
+const handleEditEmployee = (employee: Employee) => {
+  selectedEmployee.value = employee;
+  editForm.value = true;
+  openModal();
+};
+
+const handleDeleteEmployee = (employee: Employee) => {
+  selectedEmployee.value = employee;
+  deleteForm.value = true;
+  openModal();
+};
+
+const resetModalState = () => {
+  getEmployees();
+  selectedEmployee.value = null;
+  editForm.value = false;
+  deleteForm.value = false;
+  modalState.value = false;
+};
+
+const openModal = () => {
+  modalState.value = !modalState.value;
+  if (!modalState.value) {
+    resetModalState();
+  }
+};
+
 onMounted(async () => {
   await getEmployees();
 
@@ -146,6 +176,24 @@ onMounted(async () => {
 </script>
 
 <template>
+  <Modal
+    :modalState="modalState"
+    @closeModal="openModal"
+    :deleteForm="deleteForm"
+  >
+    <EditContactForm 
+      v-if="editForm" 
+      :employee="selectedEmployee" 
+      @updated="resetModalState" 
+    />
+    
+    <DeleteContactForm
+      v-if="deleteForm" 
+      :employee="selectedEmployee" 
+      @closeModal="resetModalState" 
+    />
+  </Modal>
+
   <div class="ml-10 mr-10">
     <h1 class="text-3xl font-light my-5">Kontaktų sistema</h1>
     
@@ -162,6 +210,8 @@ onMounted(async () => {
         :currentType="displayType"
         @toggle="toggleDisplayType"
       />
+
+      <PlusButton :size="10" />
     </div>
 
     <p class="my-5">
@@ -169,9 +219,22 @@ onMounted(async () => {
     </p>
     <Filters @filtersChanged="handleFiltersChanged" />
 
-    <ContactGrid v-if="displayType === 'grid' && !isLoading" :employees="employees" :isLoading="isLoading"/>
-    <ContactList v-else-if="!isLoading" :employees="employees" :isLoading="isLoading"/>
+    <ContactGrid 
+      v-if="displayType === 'grid' && !isLoading" 
+      :employees="employees" 
+      :isLoading="isLoading"
+      @edit="handleEditEmployee"
+      @delete="handleDeleteEmployee"
+    />
+    <ContactList 
+      v-else-if="!isLoading" 
+      :employees="employees" 
+      :isLoading="isLoading"
+      @edit="handleEditEmployee"
+      @delete="handleDeleteEmployee"
+    />
     <Loader v-else/>
+    
     <div
       v-if="itemsPerPage === 'All'"
       ref="sentinel"
