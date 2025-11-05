@@ -11,6 +11,10 @@ import Pagination from "@/components/Pagination.vue";
 import PerPageSelector from "@/components/PerPageSelector.vue";
 import DisplayTypeToggle from "@/components/DisplayTypeToggle.vue";
 import Loader from "@/components/Loader.vue";
+import PlusButton from "@/components/PlusButton.vue";
+import Modal from "@/components/Modal.vue";
+import DeleteContactForm from "@/components/forms/DeleteContactForm.vue";
+import CreateContactForm from "@/components/forms/CreateContactForm.vue";
 
 type DisplayStyle = "grid" | "list";
 
@@ -23,6 +27,10 @@ const totalItems = ref(0);
 const currentPage = ref(1);
 const itemsPerPage = ref<number | "All">(25);
 const totalPages = ref<number>(1);
+const createForm = ref(false);
+const editForm = ref(false);
+const deleteForm = ref(false);
+const selectedEmployee = ref<Employee | null>(null);
 
 const filters = reactive<{
   company: string | null;
@@ -50,7 +58,7 @@ async function getEmployees(append = false) {
     } else {
       isLoading.value = true;
     }
-    
+
     const [records, newCurrentPage] = await employeeService.getEmployees(
       currentPage.value,
       itemsPerPage.value === "All" ? 50 : itemsPerPage.value,
@@ -67,7 +75,7 @@ async function getEmployees(append = false) {
     currentPage.value = newCurrentPage;
     totalPages.value = records.totalPages;
     totalItems.value = records.totalItems;
-    
+
     if (append) {
       isLazyLoading.value = false;
     } else {
@@ -76,18 +84,21 @@ async function getEmployees(append = false) {
   } catch (error) {
     isLoading.value = false;
     isLazyLoading.value = false;
-    notificationStore.addErrorNotification("Klaida kraunant kontaktus. Bandykite dar kartą.")
+    notificationStore.addErrorNotification(
+      "Klaida kraunant kontaktus. Bandykite dar kartą."
+    );
   }
 }
 
 const loadMore = async () => {
-  if (isLoading.value || isLazyLoading.value || currentPage.value >= totalPages.value) return;
+  if (
+    isLoading.value ||
+    isLazyLoading.value ||
+    currentPage.value >= totalPages.value
+  )
+    return;
   currentPage.value += 1;
   await getEmployees(true);
-};
-
-const openModal = () => {
-  modalState.value = !modalState.value;
 };
 
 const handlePerPageChange = (newPerPage: number | "All") => {
@@ -120,15 +131,54 @@ const toggleDisplayType = () => {
   displayType.value = displayType.value === "grid" ? "list" : "grid";
 };
 
+const handleCreateEmployee = () => {
+  createForm.value = true;
+  openModal();
+};
+
+const handleEditEmployee = (employee: Employee) => {
+  selectedEmployee.value = employee;
+  editForm.value = true;
+  openModal();
+};
+
+const handleDeleteEmployee = (employee: Employee) => {
+  selectedEmployee.value = employee;
+  deleteForm.value = true;
+  openModal();
+};
+
+const resetModalState = () => {
+  getEmployees();
+  selectedEmployee.value = null;
+  createForm.value = false;
+  editForm.value = false;
+  deleteForm.value = false;
+  modalState.value = false;
+};
+
+const openModal = () => {
+  modalState.value = !modalState.value;
+  if (!modalState.value) {
+    resetModalState();
+  }
+};
+
 onMounted(async () => {
   await getEmployees();
 
   const observer = new IntersectionObserver(
     (entries) => {
       const entry = entries[0];
-    if (entry.isIntersecting && itemsPerPage.value === "All" && !isLoading.value && !isLazyLoading.value && employees.value.length > 0) {
-      loadMore();
-    }
+      if (
+        entry.isIntersecting &&
+        itemsPerPage.value === "All" &&
+        !isLoading.value &&
+        !isLazyLoading.value &&
+        employees.value.length > 0
+      ) {
+        loadMore();
+      }
     },
     {
       root: null,
@@ -137,31 +187,62 @@ onMounted(async () => {
     }
   );
 
-  watch(sentinel, (el) => {
-    if (el && itemsPerPage.value === "All") {
-      setTimeout(() => observer.observe(el), 300);
-    }
-  }, { immediate: true });
+  watch(
+    sentinel,
+    (el) => {
+      if (el && itemsPerPage.value === "All") {
+        setTimeout(() => observer.observe(el), 300);
+      }
+    },
+    { immediate: true }
+  );
 });
 </script>
 
 <template>
+  <Modal
+    :modalState="modalState"
+    @closeModal="openModal"
+    :deleteForm="deleteForm"
+  >
+    <CreateContactForm
+      v-if="createForm"
+      mode="create"
+      @created="resetModalState"
+    />
+
+    <CreateContactForm
+      v-if="editForm"
+      mode="edit"
+      :employee="selectedEmployee"
+      @updated="resetModalState"
+    />
+
+    <DeleteContactForm
+      v-if="deleteForm"
+      :employee="selectedEmployee"
+      @closeModal="resetModalState"
+    />
+  </Modal>
+
   <div class="ml-10 mr-10">
     <h1 class="text-3xl font-light my-5">Kontaktų sistema</h1>
-    
+
     <div class="flex gap-4 mb-5">
       <SearchBar @searchingQuery="handleSearchQuery" />
-      
+
       <PerPageSelector
         :currentValue="itemsPerPage"
         :options="optionsPerPage"
         @change="handlePerPageChange"
       />
-      
+
       <DisplayTypeToggle
         :currentType="displayType"
         @toggle="toggleDisplayType"
       />
+
+      <PlusButton :size="10" @createCompany="handleCreateEmployee" />
     </div>
 
     <p class="my-5">
@@ -169,9 +250,22 @@ onMounted(async () => {
     </p>
     <Filters @filtersChanged="handleFiltersChanged" />
 
-    <ContactGrid v-if="displayType === 'grid' && !isLoading" :employees="employees" :isLoading="isLoading"/>
-    <ContactList v-else-if="!isLoading" :employees="employees" :isLoading="isLoading"/>
-    <Loader v-else/>
+    <ContactGrid
+      v-if="displayType === 'grid' && !isLoading"
+      :employees="employees"
+      :isLoading="isLoading"
+      @edit="handleEditEmployee"
+      @delete="handleDeleteEmployee"
+    />
+    <ContactList
+      v-else-if="!isLoading"
+      :employees="employees"
+      :isLoading="isLoading"
+      @edit="handleEditEmployee"
+      @delete="handleDeleteEmployee"
+    />
+    <Loader v-else />
+
     <div
       v-if="itemsPerPage === 'All'"
       ref="sentinel"
