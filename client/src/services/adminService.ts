@@ -15,6 +15,30 @@ export default {
     return result as ListResult<User>;
   },
 
+  async checkAdminExists(email: string, username: string, excludeId?: string): Promise<{ emailExists: boolean; usernameExists: boolean }> {
+    try {
+      const admins = await this.getAdmins();
+      
+      const emailExists = admins.items.some(
+        admin => admin.email.toLowerCase() === email.toLowerCase() && 
+        (!excludeId || admin.id !== excludeId)
+      );
+      
+      const usernameExists = admins.items.some(
+        admin => admin.username.toLowerCase() === username.toLowerCase() && 
+        (!excludeId || admin.id !== excludeId)
+      );
+      
+      return {
+        emailExists,
+        usernameExists
+      };
+    } catch (error) {
+      console.error("Error checking admin existence:", error);
+      return { emailExists: false, usernameExists: false };
+    }
+  },
+
   async addAdmin(data: Record<string, any>): Promise<void> {
     try {
       await pb.collection("users").create(data);

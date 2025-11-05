@@ -63,7 +63,7 @@ const hasAnyPermission = computed(() =>
   Object.values(permissions.value).some((val) => val)
 );
 
-const validateForm = (): boolean => {
+const validateForm = async (): Promise<boolean> => {
   errors.value = {};
 
   const nameError = validateName(name.value);
@@ -71,6 +71,21 @@ const validateForm = (): boolean => {
 
   const emailError = validateEmail(email.value);
   if (emailError) errors.value.email = emailError;
+
+  const excludeId = props.mode === "edit" && props.admin ? props.admin.id : undefined;
+  const { emailExists, usernameExists } = await adminService.checkAdminExists(
+    trimText(email.value),
+    trimText(name.value),
+    excludeId
+  );
+
+  if (emailExists) {
+    errors.value.email = "Šis el. pašto adresas jau naudojamas";
+  }
+
+  if (usernameExists) {
+    errors.value.name = "Šis vardas jau naudojamas";
+  }
 
   if (props.mode === "create" && !hasAnyPermission.value) {
     errors.value.permissions = "Pasirinkite bent vieną leidimą";
@@ -106,7 +121,9 @@ const generatePassword = (length = 8) => {
 };
 
 const handleSubmit = async () => {
-  if (!validateForm()) return;
+  if (!(await validateForm())) return;
+
+  isLoading.value = true;
 
   try {
     if (props.mode === "create") {
@@ -155,6 +172,8 @@ const handleSubmit = async () => {
       "Iškilo klaida atliekant veiksmus su paskyra " + email.value
     );
     console.log(error);
+  } finally {
+    isLoading.value = false;
   }
 };
 
