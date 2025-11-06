@@ -27,7 +27,7 @@ export const useAuthStore = defineStore("auth", () => {
     canDeleteEmployees: permissions.value.delete_employees || false,
     canDeleteOffices: permissions.value.delete_offices || false,
     canDeletePermissions: permissions.value.delete_permissions || false,
-    canDeleteStructure: permissions.value.delete_structure || false,
+    canDeleteStructures: permissions.value.delete_structure || false,
     canEditCompanies: permissions.value.edit_companies || false,
     canEditEmployees: permissions.value.edit_employees || false,
     canEditOffices: permissions.value.edit_offices || false,

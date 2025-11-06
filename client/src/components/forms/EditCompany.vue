@@ -121,7 +121,7 @@ const isCreating = computed(() => (props.createNew ? "Sukurti" : "Redaguoti"));
       maxlength="50"
       placeholder="Įveskite įmonės pavadinimą..."
       :class="[
-        'bg-[#F1F2F4] p-2 rounded focus:outline-none focus:ring-2',
+        'bg-[#F1F2F4] p-2 rounded focus:outline-none focus:ring-2 w-2/3',
         errorMessage
           ? 'border-2 border-red-500 focus:ring-red-500'
           : 'border border-gray-300 focus:ring-blue-500',
@@ -132,7 +132,7 @@ const isCreating = computed(() => (props.createNew ? "Sukurti" : "Redaguoti"));
     </p>
 
     <button
-      class="bg-[#0054A6] w-2/3 p-2 rounded-md text-white hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+      class="bg-[#0054A6] w-1/3 p-2 rounded-md text-white hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
       @click="handleEdit"
       :disabled="!!errorMessage || isLoading"
     >

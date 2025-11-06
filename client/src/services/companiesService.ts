@@ -10,7 +10,7 @@ export default {
     try {
       let filter;
       if (nameFilter) {
-        filter = `name ~ "${nameFilter}"`;
+        filter = `name = "${nameFilter}"`;
       }
       const result = await pb
         .collection(`companies`)
