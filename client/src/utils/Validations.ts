@@ -31,6 +31,6 @@ export const validateCountry = (country: string) => validateName(country);
 
 export const validateStreetNumber = (streetNumber: string) => {
   if (!streetNumber || !streetNumber.trim()) return 'Įveskite pastato numerį';
-  if (!/^[\d\s\-]+$/.test(streetNumber.trim())) return 'Pastato numeris gali turėti tik skaičius, tarpo ir brūkšnio simbolius';
+  if (!/^[\d\s\-]+[A-Za-z]{0,2}$/.test(streetNumber.trim())) return 'Pastato numeris gali turėti tik skaičius, tarpo ir brūkšnio simbolius bei iki dviejų raidžių pabaigoje';
   return '';
 };
