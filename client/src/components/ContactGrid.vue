@@ -1,22 +1,26 @@
 <script setup lang="ts">
-import ContactCard from "./ContactCard.vue";
-import type Employee from "@/types/Employee";
+import type Employee from '@/types/Employee';
+import ContactCard from './ContactCard.vue';
 
 defineProps<{
   employees: Employee[];
+  isLoading: boolean;
 }>();
+
+const emit = defineEmits<{
+  edit: [employee: Employee],
+  delete: [employee: Employee]
+}>()
 </script>
 
 <template>
-  <div v-if="employees.length > 0" class="grid grid-cols-4 gap-4 my-4">
-    <ContactCard
-      v-for="employee in employees"
-      :key="employee.id"
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <ContactCard 
+      v-for="employee in employees" 
+      :key="employee.id" 
       :employee="employee"
+      @edit="emit('edit', $event)"
+      @delete="emit('delete', $event)"
     />
-  </div>
-
-  <div v-else class="text-center py-12">
-    <p class="text-gray-500 text-2xl">Darbuotojų sąrašas tuščias</p>
   </div>
 </template>

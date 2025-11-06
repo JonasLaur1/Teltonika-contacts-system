@@ -2,11 +2,18 @@
 const emit = defineEmits<{
   createCompany: []
 }>();
+
+defineProps<{
+  size?: number
+}>()
 </script>
 
 <template>
   <button 
-    class="bg-[#0054A6] shadow shadow-xl rounded-full w-12 h-12 flex items-center justify-center hover:bg-[#1F3F77] transition-colors" 
+    :class="[
+      'bg-[#0054A6] shadow shadow-xl rounded flex items-center justify-center hover:bg-[#1F3F77] transition-colors',
+      size ? `w-${size} h-${size}` : 'w-12 h-12'
+    ]"
     @click="emit('createCompany')"
     aria-label="Sukurti naują įmonę"
   >

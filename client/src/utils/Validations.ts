@@ -16,12 +16,21 @@ export const validateEmail = (email: string) => {
   return '';
 };
 
+export const validatePersonName = (name: string) => {
+  const trimmed = name.trim();
+  if (!trimmed) return 'Įveskite vardą/pavardę';
+  if (trimmed.length < 2) return 'Vardas/pavardė turi būti bent iš 2 simbolių';
+  if (trimmed.length > 50) return 'Vardas/pavardė negali būti ilgesnis nei 50 simbolių';
+  if (!/^[A-Za-zÀ-ž]+$/.test(trimmed)) return 'Vardas/pavardė gali turėti tik raides';
+  return '';
+};
+
 export const validateName = (name: string) => {
   const trimmed = name.trim();
   if (!trimmed) return 'Įveskite reikšmę';
-  if (trimmed.length < 2) return 'Reikšmė turi būti bent iš 2 simbolių.';
+  if (trimmed.length < 2) return 'Reikšmė turi būti bent iš 2 simbolių';
   if (trimmed.length > 50) return 'Reikšmė negali būti ilgesnis nei 50 simbolių';
-  if (!/^[A-Za-zÀ-ž0-9&.,'’\-\/\s]+$/.test(trimmed)) return 'Naudojami neleistini simboliai';
+  if (!/^[A-Za-zÀ-ž0-9&.,''\-\/\s]+$/.test(trimmed)) return 'Naudojami neleistini simboliai';
   return '';
 };
 
