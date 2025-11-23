@@ -13,6 +13,26 @@ The application demonstrates practical implementation of:
 - Responsive design principles with Tailwind CSS
 - Client-side routing for smooth navigation
 
+## 📸 Screenshots
+
+### Login Page
+![Login](./ProjectImages/login.png)
+
+### Main Page
+![Main](./ProjectImages/main.png)
+
+### Admin Panel
+![Admin](./ProjectImages/admin.png)
+
+### Companies Management
+![Companies](./ProjectImages/companies.png)
+
+### Structures Page
+![Structures](./ProjectImages/structures.png)
+
+### Edit Structures Modal
+![Edit Structures](./ProjectImages/editStructures.png)
+
 ## 🚀 Features
 
 ### Contact Management
